@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/regenerativep/jsario/issues"
   },
-  "homepage": "https://github.com/regenerativep/jsario#readme"
+  "homepage": "https://github.com/regenerativep/jsario#readme",
+  "dependencies": {
+    "ws": "^7.1.2"
+  }
 }
