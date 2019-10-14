@@ -5,9 +5,9 @@ class GameWorld
     {
         //todo calculate acceleration based on forces + mass, not acceleration itself
         this.cellList = [];
-        this.friction = 0.2;
+        this.friction = 1;
         this.maxSplitCount = 16;
-        this.cellRepelAcceleration = 1;
+        this.minSplitSize = 16;
         this.radiusMultiplier = 6;
     }
     findCellFromId(id)
@@ -30,16 +30,6 @@ class GameWorld
             {
                 let aCell = this.cellList[i];
                 let bCell = this.cellList[j];
-                /*
-                let collide = false;
-                for(let k = 0; k < aCell.group.length; k++)
-                {
-                    if(aCell.group[k] == bCell)
-                    {
-                        collide = true;
-                    }
-                }
-                if(collide)*/
                 if(aCell.group == bCell.group)
                 {
                     let distX = bCell.x - aCell.x;
@@ -50,13 +40,6 @@ class GameWorld
                         let dist = Math.sqrt(distSqr);
                         let uX = distX / dist;
                         let uY = distY / dist;
-                        let aX = uX * this.cellRepelAcceleration;
-                        let aY = uY * this.cellRepelAcceleration;
-                        /*
-                        aCell.vx -= aX;
-                        aCell.vy -= aY;
-                        bCell.vx += aX;
-                        bCell.vy += aY;*/
                         let distd2 = (aCell.radius + bCell.radius - dist) / 2;
                         aCell.x -= uX * distd2;
                         aCell.y -= uY * distd2;
@@ -81,69 +64,71 @@ class GameCell
         this.y = y;
         this.vx = 0;
         this.vy = 0;
+        this.mx = 0;
+        this.my = 0;
         this.id = lastCellId++;
         this.changeMass(32);
         this.targetX = 0;
         this.targetY = 0;
-        this.maxAcceleration = 0.3;
-        this.maxSpeed = 3;
-        this.speedDecelerationWhenMax = 0.1;
-        this.launchSpeed = 8;
+        this.maxMomentum = 3;
+        this.maxImpulse = 30;
+        this.impulseWhenMax = 1;
+        this.launchImpulse = 50;
         this.angle = 0;
         this.group = [];
     }
     changeMass(newMass)
     {
         this.mass = newMass;
-        this.updateRadius();
-    }
-    updateRadius()
-    {
         this.radius = Math.sqrt(this.mass / Math.PI) * this.world.radiusMultiplier;
+    }
+    apply(mx, my)
+    {
+        this.mx += mx;// / this.mass;
+        this.my += my;// / this.mass;
     }
     update()
     {
         this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
         let uX = Math.cos(this.angle);
         let uY = Math.sin(this.angle);
-        let magnitude = this.maxAcceleration; //may want to change in future
-        this.vx += uX * magnitude;
-        this.vy += uY * magnitude;
+        let magnitude = this.maxMomentum; //may want to change in future
+        this.apply(uX * magnitude, uY * magnitude);
 
-        let distSqr = (this.vx ** 2) + (this.vy ** 2);
+        let distSqr = (this.mx ** 2) + (this.my ** 2);
         let dist = null;
         if(distSqr > this.world.friction ** 2)
         {
             let dist = Math.sqrt(distSqr);
-            uX = this.vx / dist;
-            uY = this.vy / dist;
-            this.vx -= uX * this.world.friction;
-            this.vy -= uY * this.world.friction;
+            uX = this.mx / dist;
+            uY = this.my / dist;
+            this.apply(-uX * this.world.friction, -uY * this.world.friction);
         }
         else
         {
-            this.vx = 0;
-            this.vy = 0;
+            this.mx = 0;
+            this.my = 0;
         }
-        if(distSqr > this.maxSpeed ** 2)
+        if(distSqr > this.maxImpulse ** 2)
         {
             if(dist == null)
             {
                 dist = Math.sqrt(distSqr);
             }
-            if(dist < this.maxSpeed + this.speedDecelerationWhenMax)
+            if(dist < this.maxImpulse + this.impulseWhenMax)
             {
-                this.vx = (this.vx / dist) * this.maxSpeed;
-                this.vy = (this.vy / dist) * this.maxSpeed;
+                this.mx = (this.mx / dist) * this.maxImpulse;
+                this.my = (this.my / dist) * this.maxImpulse;
             }
             else
             {
-                uX = this.vx / dist;
-                uY = this.vy / dist;
-                this.vx -= uX * this.speedDecelerationWhenMax;
-                this.vy -= uY * this.speedDecelerationWhenMax;
+                uX = this.mx / dist;
+                uY = this.my / dist;
+                this.apply(-uX * this.impulseWhenMax, -uY * this.impulseWhenMax);
             }
         }
+        this.vx = this.mx / this.mass;
+        this.vy = this.my / this.mass;
         this.x += this.vx;
         this.y += this.vy;
     }
@@ -153,8 +138,8 @@ class GameCell
         let halfMass = this.mass / 2;
         this.changeMass(halfMass);
         cell.changeMass(halfMass);
-        cell.vx = this.vx;
-        cell.vy = this.vy;
+        cell.mx = this.mx;
+        cell.my = this.my;
         cell.targetX = this.targetX;
         cell.targetY = this.targetY;
         cell.group = this.group;
@@ -167,10 +152,9 @@ class GameCell
         this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
         let uX = Math.cos(this.angle);
         let uY = Math.sin(this.angle);
-        this.vx += uX * this.launchSpeed;
-        this.vy += uY * this.launchSpeed;
-        this.x += this.vx;
-        this.y += this.vy;
+        this.apply(uX * this.launchImpulse, uY * this.launchImpulse)
+        this.x += this.mx;
+        this.y += this.my;
     }
 }
 

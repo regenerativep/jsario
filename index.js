@@ -137,6 +137,10 @@ function main()
                     break;
                 }
                 let cell = user.cells[i];
+                if(cell.mass < gameWorld.minSplitSize)
+                {
+                    continue;
+                }
                 let newCell = cell.split();
                 user.cells.push(newCell);
                 newCell.launch();
