@@ -9,19 +9,56 @@
                 {
                     this.x = 256;
                     this.y = 256;
+                    this.xVel = 0;
+                    this.yVel = 0;
                 }
                 move()
                 {
                     var angle = Math.atan2(mouseY-this.y,mouseX-this.x);
-                    this.x += Math.cos(angle)*Math.min(1,(Math.abs(mouseX-this.x)/20));
-                    this.y += Math.sin(angle)*Math.min(1,(Math.abs(mouseY-this.y)/20));
+                    this.xVel = Math.cos(angle)*Math.min(1,(Math.abs(mouseX-this.x)/20));
+                    this.yVel = Math.sin(angle)*Math.min(1,(Math.abs(mouseY-this.y)/20));
+                    this.x += this.xVel;
+                    this.y += this.yVel;
+                }
+                split()
+                {
+                    let splitCells = [this];
+                    return splitCells; //temporary, could return an array with multiple cells if a split occured
                 }
                 draw()
                 {
                     ellipse(this.x, this.y, 32, 32);
                 }
             }
+            class PetriDish //haha petri dishes hold cells
+            {
+                constructor()
+                {
+                    this.clientCells = [new Cell()]; //start out with one local cell
+                    this.serverCells = [];
+                }
+                updateCells()
+                {
+                    for(let i = 0; i < this.clientCells.length; i++) //local cell movement and splitting
+                    {
+                        this.clientCells[i].move();
+                        let splitCells = this.clientCells[i].split();
+                        this.clientCells.splice(i,1);
+                        this.clientCells.push(...splitCells);
+                    }
+                    //send any local cells to server to be saved there, recieve all cells back, draw them all here
+                    //send localCells
+                    //get back cells from server, add to serverCells
+                    //if any client sided cells do not appear in the list that we get back from the server, those cells have died
+                    var allCells = this.clientCells; //temporary, should be replaced by something getting all cells to be drawn back from the server
+                    for(let i = 0; i < allCells.length; i++)
+                    {
+                        allCells[i].draw();
+                    }
+                }
+            }
             var c = new Cell();
+            var pd = new PetriDish();
             function setup()
             {
                 createCanvas(512, 512);
@@ -29,8 +66,8 @@
             function draw()
             {
                 background(0);
-                c.move()
-                c.draw()
+                pd.updateCells();
+
             }
         </script>
     </head>
