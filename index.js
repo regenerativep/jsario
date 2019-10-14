@@ -82,7 +82,8 @@ function main()
                 id: cell.id,
                 vx: cell.vx,
                 vy: cell.vy,
-                mass: cell.mass
+                mass: cell.mass,
+                radius: cell.radius
             });
         }
         for(let i = 0; i < users.length; i++)
@@ -125,19 +126,20 @@ function main()
             let cell = user.cells[i];
             cell.targetX = targetX;
             cell.targetY = targetY;
-            if(doSplit)
-            {
-                let newCell = cell.split();
-                user.cells.push(newCell);
-            }
         }
         if(doSplit)
         {
-            for(let i = 0; i < user.cells.length; i++)
+            user.cells.sort((a, b) => { return a.mass - b.mass; }); //ascending
+            for(let i = user.cells.length - 1; i >= 0; i--)
             {
+                if(user.cells.length >= gameWorld.maxSplitCount)
+                {
+                    break;
+                }
                 let cell = user.cells[i];
                 let newCell = cell.split();
                 user.cells.push(newCell);
+                newCell.launch();
             }
             user.sendCellList();
         }

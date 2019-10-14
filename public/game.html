@@ -3,16 +3,16 @@
     <head>
         <script src="p5.min.js"></script>
         <script>
-            var halfWidth, halfHeight;
             class Cell
             {
-                constructor(x,y,id,vx,vy)
+                constructor(x,y,id,vx,vy, r)
                 {
                     this.x = x;
                     this.y = y;
                     this.id = id;
                     this.vx = vx;
                     this.vy = vy;
+                    this.radius = r
                 }
                 move() //currently not in use
                 {
@@ -29,7 +29,7 @@
                 }
                 draw()
                 {
-                    ellipse(this.x, this.y, 32, 32);
+                    ellipse(this.x, this.y, this.radius * 2, this.radius * 2);
                 }
             }
             class Camera
@@ -80,10 +80,16 @@
                 }
                 sendInput()
                 {
+                    let doSplit = spacePressed && !lastSpacePressed;
+                    if(doSplit)
+                    {
+                        console.log("sending split");
+                    }
                     this.webSock.send(JSON.stringify({
                         type: "input",
                         x: this.camera.camX + mouseX,
-                        y: this.camera.camY + mouseY
+                        y: this.camera.camY + mouseY,
+                        split: doSplit
                     }));
                     
                 }
@@ -99,7 +105,7 @@
                     for(let i = 0; i < cells.length; i++)
                     {
                         let c = cells[i];
-                        this.cellList.push(new Cell(c.x,c.y,c.id,c.vx,c.vy));
+                        this.cellList.push(new Cell(c.x,c.y,c.id,c.vx,c.vy, c.radius));
                     }
                 }
                 updateCells()
@@ -112,10 +118,12 @@
                     }
                 }
             }
+            var halfWidth, halfHeight;
             var cam = new Camera();
             var client = new Client(cam);
             var connected = false;
             var ws = new WebSocket("ws://127.0.0.1:5524");
+            var spacePressed, lastSpacePressed;
             ws.onopen = function() {
                 console.log("connected");
                 ws.send(JSON.stringify({
@@ -151,6 +159,22 @@
                     client.updateCells();
                 }
                 rect(64,64,64,64);
+
+                lastSpacePressed = spacePressed;
+            }
+            function keyPressed()
+            {
+                if(key == ' ')
+                {
+                    spacePressed = true;
+                }
+            }
+            function keyReleased()
+            {
+                if(key == ' ')
+                {
+                    spacePressed = false;
+                }
             }
         </script>
     </head>
