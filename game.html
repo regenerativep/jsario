@@ -3,20 +3,21 @@
     <head>
         <script src="p5.min.js"></script>
         <script>
+            var halfWidth = 256;
             class Cell
             {
                 constructor()
                 {
-                    this.x = 256;
-                    this.y = 256;
+                    this.x = 0;
+                    this.y = 0;
                     this.xVel = 0;
                     this.yVel = 0;
                 }
                 move()
                 {
-                    var angle = Math.atan2(mouseY-this.y,mouseX-this.x);
-                    this.xVel = Math.cos(angle)*Math.min(1,(Math.abs(mouseX-this.x)/20));
-                    this.yVel = Math.sin(angle)*Math.min(1,(Math.abs(mouseY-this.y)/20));
+                    var angle = Math.atan2(mouseY-halfWidth,mouseX-halfWidth);
+                    this.xVel = Math.cos(angle)*Math.min(1,(Math.abs(mouseX-halfWidth)/20));
+                    this.yVel = Math.sin(angle)*Math.min(1,(Math.abs(mouseY-halfWidth)/20));
                     this.x += this.xVel;
                     this.y += this.yVel;
                 }
@@ -28,6 +29,27 @@
                 draw()
                 {
                     ellipse(this.x, this.y, 32, 32);
+                }
+            }
+            class Camera
+            {
+                constructor()
+                {
+                    this.camX = 0;
+                    this.camY = 0;
+                }
+                track(cells)
+                {
+                    this.camX = 0;
+                    this.camY = 0;
+                    for(let i = 0; i < cells.length; i++)
+                    {
+                        this.camX += cells[i].x;
+                        this.camY += cells[i].y;
+                    }
+                    this.camX = -this.camX/cells.length + halfWidth;
+                    this.camY = -this.camY/cells.length + halfWidth;
+                    translate(this.camX,this.camY);
                 }
             }
             class PetriDish //haha petri dishes hold cells
@@ -59,6 +81,7 @@
             }
             var c = new Cell();
             var pd = new PetriDish();
+            var cam = new Camera();
             function setup()
             {
                 createCanvas(512, 512);
@@ -66,8 +89,12 @@
             function draw()
             {
                 background(0);
+                cam.track(pd.clientCells);
                 pd.updateCells();
-
+                
+                console.log("cam coords"+cam.camX+" "+cam.camY);
+                console.log("cell coords"+pd.clientCells[0].x+" "+pd.clientCells[0].y);
+                rect(64,64,64,64);
             }
         </script>
     </head>
