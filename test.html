@@ -1,0 +1,13 @@
+<html>
+    <head>
+        <script>
+            var ws = new WebSocket("ws://127.0.0.1:5524");
+            ws.onopen = function() {
+                console.log("connected");
+            };
+            ws.onmessage = function(ev) {
+                console.log(JSON.parse(ev.data));
+            };
+        </script>
+    </head>
+</html>
