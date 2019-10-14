@@ -3,22 +3,12 @@
     <head>
         <script src="p5.min.js"></script>
         <script>
-            var c = new Cell();
-            function setup()
-            {
-                createCanvas(512, 512);
-            }
-            function draw()
-            {
-                background(0);
-                c.draw()
-            }
             class Cell
             {
                 constructor()
                 {
                     this.x = 256;
-                    this.y - 256;
+                    this.y = 256;
                 }
                 move()
                 {
@@ -30,6 +20,16 @@
                 {
                     ellipse(this.x, this.y, 32, 32);
                 }
+            }
+            var c = new Cell();
+            function setup()
+            {
+                createCanvas(512, 512);
+            }
+            function draw()
+            {
+                background(0);
+                c.draw()
             }
         </script>
     </head>
