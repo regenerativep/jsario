@@ -98,7 +98,7 @@
                     this.cellList = [];
                     for(let i = 0; i < cells.length; i++)
                     {
-                        c = cells[i];
+                        let c = cells[i];
                         this.cellList.push(new Cell(c.x,c.y,c.id,c.vx,c.vy));
                     }
                 }
@@ -122,17 +122,17 @@
                     type: "register"
                 }));
                 connected = true;
-                gw.setSocket(ws);
+                client.setSocket(ws);
             };
             ws.onmessage = function(ev) {
                 let data = JSON.parse(ev.data);
                 if (data.type == "youare")
                 {
-                    pd.receiveMyCells(data.cellIds);
+                    client.receiveMyCells(data.cellIds);
                 }
                 else if(data.type == "allCellUpdate")
                 {
-                    pd.receiveCells(data.cellDataList);
+                    client.receiveCells(data.cellList);
                 }
             };
             function setup()
@@ -145,8 +145,8 @@
                 
                 if(connected)
                 {
-                    cam.track(pd.clientCells);
-                    pd.updateCells(ws);
+                    cam.track(client.cellList);
+                    client.updateCells();
                 }
                 rect(64,64,64,64);
             }

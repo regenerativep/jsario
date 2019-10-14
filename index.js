@@ -2,21 +2,22 @@
 var express = require("express");
 var WebSocket = require("ws");
 
-var wlrdJs = require("./public/world.js");
-var GameWorld = wlrdJs.GameWorld;
+var wrldJs = require("./public/world.js");
+var GameWorld = wrldJs.GameWorld;
 var GameCell = wrldJs.GameCell;
 
 var webapp, wsServer, gameWorld;
 var gameUpdateInterval, clientUpdateInterval;
 var messageResponses = {};
-
+var lastUserId = 0;
 
 class GameUser
 {
-    constructor(socket)
+    constructor(socket, id)
     {
         this.socket = socket;
         this.cells = [];
+        this.id = id;
     }
     sendCellList()
     {
@@ -52,6 +53,17 @@ function findUserFromSocket(socket)
         }
     }
     return null;
+}
+function findUserFromId(id)
+{
+    for(let i = 0; i < users.length; i++)
+    {
+        let user = users[i];
+        if(user.id == id)
+        {
+            return user;
+        }
+    }
 }
 function main()
 {
@@ -89,15 +101,22 @@ function main()
             id: readProp(data.id, -1)
         }));
     };
-    messageResponses["register"] = (data, socket) => {
+    messageResponses["register"] = (data, socket, id) => {
         let cell = new GameCell(gameWorld, 0, 0);
-        let user = new GameUser(socket);
+        let user = new GameUser(socket, id);
         user.cells.push(cell);
         gameWorld.cellList.push(cell);
         user.sendCellList();
+        users.push(user);
+        console.log("registered a user");
     };
-    messageResponses["input"] = (data, socket) => {
-        let user = findUserFromSocket(socket);
+    messageResponses["input"] = (data, socket, id) => {
+        let user = findUserFromId(id);
+        if(user == null)
+        {
+            console.log("could not find user");
+            return;
+        }
         let targetX = readProp(data["x"], 0);
         let targetY = readProp(data["y"], 0);
         let doSplit = readProp(data["split"], false);
@@ -132,12 +151,13 @@ function main()
     });
     wsServer.on("connection", (socket, req) => {
         console.log("received connection from " + req.connection.remoteAddress);
+        var id = lastUserId++;
         socket.on("message", (dataStr) => {
             let dataObj = JSON.parse(dataStr);
             let actionName = dataObj.type;
             if(messageResponses.hasOwnProperty(actionName))
             {
-                messageResponses[actionName](dataObj, socket);
+                messageResponses[actionName](dataObj, socket, id);
             }
         });
     });

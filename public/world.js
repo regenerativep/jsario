@@ -48,8 +48,8 @@ class GameCell
     update()
     {
         this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
-        let uX = Math.cos(angle);
-        let uY = Math.sin(angle);
+        let uX = Math.cos(this.angle);
+        let uY = Math.sin(this.angle);
         let magnitude = this.maxAcceleration; //may want to change in future
         this.vx += uX * magnitude;
         this.vy += uY * magnitude;
@@ -76,7 +76,7 @@ class GameCell
         let distSqr = (this.vx ** 2) + (this.vy ** 2);
         if(distSqr > this.maxSpeed ** 2)
         {
-            let dist = Math.sqrt(dist);
+            let dist = Math.sqrt(distSqr);
             if(dist < this.maxSpeed + this.speedDecelerationWhenMax)
             {
                 this.vx = (this.vx / dist) * this.maxSpeed;
