@@ -1,4 +1,9 @@
 var lastCellId = 0;
+function projectVectors(ax, ay, bx, by)
+{
+    let val = ((ax * bx) + (ay * by));// / (bx ** 2 + by ** 2)); //for what we are using it for, b is a unit vector
+    return { x: bx * val, y: by * val };
+}
 class GameWorld
 {
     constructor()
@@ -6,9 +11,11 @@ class GameWorld
         //todo calculate acceleration based on forces + mass, not acceleration itself
         this.cellList = [];
         this.friction = 1;
+        this.cellularFriction = 0.1;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.radiusMultiplier = 6;
+        this.cellSpreadDivider = 1;
     }
     findCellFromId(id)
     {
@@ -40,11 +47,25 @@ class GameWorld
                         let dist = Math.sqrt(distSqr);
                         let uX = distX / dist;
                         let uY = distY / dist;
-                        let distd2 = (aCell.radius + bCell.radius - dist) / 2;
+                        let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
                         aCell.x -= uX * distd2;
                         aCell.y -= uY * distd2;
                         bCell.x += uX * distd2;
                         bCell.y += uY * distd2;
+                        
+                        let dvx = bCell.vx - aCell.vx;
+                        let dvy = bCell.vy - aCell.vy;
+                        //perpendicular
+                        let pX = uY;
+                        let pY = -uX;
+                        let proj = projectVectors(dvx, dvy, pX, pY);
+                        let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
+                        if(mag > this.cellularFriction)
+                        {
+                            mag = this.cellularFriction;
+                        }
+                        aCell.apply(-pX * mag, -pY * mag);
+                        bCell.apply(pX * mag, pY * mag);
                     }
                 }
             }
