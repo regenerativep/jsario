@@ -13,8 +13,8 @@
                 move()
                 {
                     var angle = Math.atan2(mouseY,mouseX);
-                    this.x += Math.cos(angle)*Math.min(1,Math.abs(mouseX-this.x));
-                    this.y += Math.cos(angle)*Math.min(1,Math.abs(mouseY-this.y));
+                    this.x += Math.cos(angle)*Math.min(1,(Math.abs(mouseX-this.x)/20));
+                    this.y += Math.cos(angle)*Math.min(1,(Math.abs(mouseY-this.y)/20));
                 }
                 draw()
                 {
