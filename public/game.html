@@ -39,15 +39,26 @@
                     this.camX = 0;
                     this.camY = 0;
                 }
-                track(cells)
+                track(c)
                 {
                     this.camX = 0;
                     this.camY = 0;
+
+                    let cells = [];
+                    for(let i = 0; i < c.localIds.length; i++)
+                    {
+                        let cell = c.findCellFromId(c.localIds[i]);
+                        if(cell!=null)
+                        {
+                            cells.push(cell);
+                        }
+                    }
                     for(let i = 0; i < cells.length; i++)
                     {
                         this.camX += cells[i].x;
                         this.camY += cells[i].y;
                     }
+
                     this.camX = this.camX/cells.length - halfWidth;
                     this.camY = this.camY/cells.length - halfHeight;
                     translate(-this.camX,-this.camY);
@@ -95,7 +106,8 @@
                 }
                 receiveMyCells(ids)
                 {
-                    this.clientCellIds = ids;
+                    this.localIds = ids;
+                    console.log(this.localIds);
                 }
                 //here we have to process the list of json objects and turn them into an actual cell list
                 //is this the best way to do this, or should we update the cells in the current list instead of essentially overwriting every time?
@@ -136,6 +148,7 @@
                 let data = JSON.parse(ev.data);
                 if (data.type == "youare")
                 {
+                    console.log(data.cellIds);
                     client.receiveMyCells(data.cellIds);
                 }
                 else if(data.type == "allCellUpdate")
@@ -155,7 +168,7 @@
                 
                 if(connected)
                 {
-                    cam.track(client.cellList);
+                    cam.track(client);
                     client.updateCells();
                 }
                 rect(64,64,64,64);
