@@ -4,7 +4,7 @@ class GameWorld
     constructor()
     {
         this.cellList = [];
-        this.friction = 0.1;
+        this.friction = 0.4;
     }
     findCellFromId(id)
     {
@@ -37,9 +37,21 @@ class GameCell
         this.vy = 0;
         this.id = lastCellId++;
         this.mass = 32;
+        this.targetX = 0;
+        this.targetY = 0;
+        this.maxAcceleration = 1;
+        this.maxSpeed = 4;
     }
     update()
     {
+        let angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
+        let uX = Math.cos(angle);
+        let uY = Math.sin(angle);
+        let magnitude = this.maxAcceleration; //may want to change in future
+        this.vx += uX * magnitude;
+        this.vy += uY * magnitude;
+
+        //todo make friction directional, not axis-based
         let vSign = Math.sign(this.vx);
         if(this.vx * vSign > this.world.friction)
         {
@@ -57,6 +69,13 @@ class GameCell
         else
         {
             this.vy = 0;
+        }
+        let distSqr = (this.vx ** 2) + (this.vy ** 2);
+        if(distSqr > this.maxSpeed ** 2)
+        {
+            let dist = Math.sqrt(dist);
+            this.vx = (this.vx / dist) * this.maxSpeed;
+            this.vy = (this.vy / dist) * this.maxSpeed;
         }
         this.x += this.vx;
         this.y += this.vy;

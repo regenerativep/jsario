@@ -41,6 +41,18 @@ function readProp(val, def)
     }
     return val;
 }
+function findUserFromSocket(socket)
+{
+    for(let i = 0; i < users.length; i++)
+    {
+        let user = users[i];
+        if(user.socket == socket)
+        {
+            return user;
+        }
+    }
+    return null;
+}
 function main()
 {
     gameWorld = new GameWorld();
@@ -83,6 +95,17 @@ function main()
         user.cells.push(cell);
         gameWorld.cellList.push(cell);
         user.sendCellList();
+    };
+    messageResponses["input"] = (data, socket) => {
+        let user = findUserFromSocket(socket);
+        let targetX = readProp(data["x"], 0);
+        let targetY = readProp(data["y"], 0);
+        for(let i = 0; i < user.cells.length; i++)
+        {
+            let cell = user.cells[i];
+            cell.targetX = targetX;
+            cell.targetY = targetY;
+        }
     };
 
     webapp = express();
