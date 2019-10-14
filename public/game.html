@@ -59,7 +59,7 @@
                     this.clientCells = [new Cell()]; //start out with one local cell
                     this.serverCells = [];
                 }
-                updateCells()
+                updateCells(webSock)
                 {
                     for(let i = 0; i < this.clientCells.length; i++) //local cell movement and splitting
                     {
@@ -68,20 +68,36 @@
                         this.clientCells.splice(i,1);
                         this.clientCells.push(...splitCells);
                     }
-                    //send any local cells to server to be saved there, recieve all cells back, draw them all here
-                    //send localCells
-                    //get back cells from server, add to serverCells
+                    this.sendCells(webSock);
+                    
                     //if any client sided cells do not appear in the list that we get back from the server, those cells have died
-                    var allCells = this.clientCells; //temporary, should be replaced by something getting all cells to be drawn back from the server
+                    let allCells = [];
+                    allCells.push(...serverCells);
                     for(let i = 0; i < allCells.length; i++)
                     {
                         allCells[i].draw();
                     }
                 }
+                sendCells(webSock)
+                {
+                    webSock.send(this.clientCells);
+                }
+                recieveCells(cells)
+                {
+                    this.serverCells = cells;
+                }
             }
             var c = new Cell();
             var pd = new PetriDish();
             var cam = new Camera();
+            var ws = new WebSocket("ws://127.0.0.1:5524");
+            ws.onopen = function() {
+                console.log("connected");
+            };
+            ws.onmessage = function(ev) {
+                console.log(JSON.parse(ev.data));
+                pd.recieveCells(JSON.parse(ev.data));
+            };
             function setup()
             {
                 createCanvas(512, 512);
@@ -90,10 +106,8 @@
             {
                 background(0);
                 cam.track(pd.clientCells);
-                pd.updateCells();
+                pd.updateCells(ws);
                 
-                console.log("cam coords"+cam.camX+" "+cam.camY);
-                console.log("cell coords"+pd.clientCells[0].x+" "+pd.clientCells[0].y);
                 rect(64,64,64,64);
             }
         </script>
