@@ -4,7 +4,7 @@ class GameWorld
     constructor()
     {
         this.cellList = [];
-        this.friction = 0.4;
+        this.friction = 0.1;
     }
     findCellFromId(id)
     {
@@ -39,8 +39,8 @@ class GameCell
         this.mass = 32;
         this.targetX = 0;
         this.targetY = 0;
-        this.maxAcceleration = 1;
-        this.maxSpeed = 4;
+        this.maxAcceleration = 0.2;
+        this.maxSpeed = 2;
         this.speedDecelerationWhenMax = 0.5;
         this.launchSpeed = 8;
         this.angle = 0;
@@ -54,29 +54,27 @@ class GameCell
         this.vx += uX * magnitude;
         this.vy += uY * magnitude;
 
-        //todo make friction directional, not axis-based
-        let vSign = Math.sign(this.vx);
-        if(this.vx * vSign > this.world.friction)
+        let distSqr = (this.vx ** 2) + (this.vy ** 2);
+        let dist = null;
+        if(distSqr > this.world.friction ** 2)
         {
-            this.vx -= this.world.friction * vSign;
+            let dist = Math.sqrt(distSqr);
+            uX = this.vx / dist;
+            uY = this.vy / dist;
+            this.vx -= uX * this.world.friction;
+            this.vy -= uY * this.world.friction;
         }
         else
         {
             this.vx = 0;
-        }
-        vSign = Math.sign(this.vy);
-        if(this.vy * vSign > this.world.friction)
-        {
-            this.vy -= this.world.friction * vSign;
-        }
-        else
-        {
             this.vy = 0;
         }
-        let distSqr = (this.vx ** 2) + (this.vy ** 2);
         if(distSqr > this.maxSpeed ** 2)
         {
-            let dist = Math.sqrt(distSqr);
+            if(dist == null)
+            {
+                dist = Math.sqrt(distSqr);
+            }
             if(dist < this.maxSpeed + this.speedDecelerationWhenMax)
             {
                 this.vx = (this.vx / dist) * this.maxSpeed;

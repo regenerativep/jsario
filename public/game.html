@@ -3,7 +3,7 @@
     <head>
         <script src="p5.min.js"></script>
         <script>
-            var halfWidth = 256;
+            var halfWidth, halfHeight;
             class Cell
             {
                 constructor(x,y,id,vx,vy)
@@ -16,9 +16,9 @@
                 }
                 move() //currently not in use
                 {
-                    var angle = Math.atan2(mouseY-halfWidth,mouseX-halfWidth);
+                    var angle = Math.atan2(mouseY-halfHeight,mouseX-halfWidth);
                     this.vx = Math.cos(angle)*Math.min(1,(Math.abs(mouseX-halfWidth)/20));
-                    this.vy = Math.sin(angle)*Math.min(1,(Math.abs(mouseY-halfWidth)/20));
+                    this.vy = Math.sin(angle)*Math.min(1,(Math.abs(mouseY-halfHeight)/20));
                     this.x += this.vx;
                     this.y += this.vy;
                 }
@@ -49,7 +49,7 @@
                         this.camY += cells[i].y;
                     }
                     this.camX = this.camX/cells.length - halfWidth;
-                    this.camY = this.camY/cells.length - halfWidth;
+                    this.camY = this.camY/cells.length - halfHeight;
                     translate(-this.camX,-this.camY);
                 }
             }
@@ -137,7 +137,9 @@
             };
             function setup()
             {
-                createCanvas(512, 512);
+                createCanvas(1024, 768);
+                halfWidth = width / 2;
+                halfHeight = height / 2;
             }
             function draw()
             {
