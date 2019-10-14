@@ -41,10 +41,13 @@ class GameCell
         this.targetY = 0;
         this.maxAcceleration = 1;
         this.maxSpeed = 4;
+        this.speedDecelerationWhenMax = 0.5;
+        this.launchSpeed = 8;
+        this.angle = 0;
     }
     update()
     {
-        let angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
+        this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
         let uX = Math.cos(angle);
         let uY = Math.sin(angle);
         let magnitude = this.maxAcceleration; //may want to change in future
@@ -74,11 +77,41 @@ class GameCell
         if(distSqr > this.maxSpeed ** 2)
         {
             let dist = Math.sqrt(dist);
-            this.vx = (this.vx / dist) * this.maxSpeed;
-            this.vy = (this.vy / dist) * this.maxSpeed;
+            if(dist < this.maxSpeed + this.speedDecelerationWhenMax)
+            {
+                this.vx = (this.vx / dist) * this.maxSpeed;
+                this.vy = (this.vy / dist) * this.maxSpeed;
+            }
+            else
+            {
+                uX = this.vx / dist;
+                uY = this.vy / dist;
+                this.vx -= uX * this.speedDecelerationWhenMax;
+                this.vy -= uY * this.speedDecelerationWhenMax;
+            }
         }
         this.x += this.vx;
         this.y += this.vy;
+    }
+    split()
+    {
+        let cell = new GameCell(this.world, this.x, this.y);
+        let halfMass = this.mass / 2;
+        this.mass = halfMass;
+        cell.mass = halfMass;
+        cell.vx = this.vx;
+        cell.vy = this.vy;
+        cell.targetX = this.targetX;
+        cell.targetY = this.targetY;
+        cell.launch();
+        return cell;
+    }
+    launch()
+    {
+        let uX = Math.cos(this.angle);
+        let uY = Math.sin(this.angle);
+        this.vx += uX * this.launchSpeed;
+        this.vy += uY * this.launchSpeed;
     }
 }
 

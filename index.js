@@ -100,11 +100,17 @@ function main()
         let user = findUserFromSocket(socket);
         let targetX = readProp(data["x"], 0);
         let targetY = readProp(data["y"], 0);
+        let doSplit = readProp(data["split"], false);
         for(let i = 0; i < user.cells.length; i++)
         {
             let cell = user.cells[i];
             cell.targetX = targetX;
             cell.targetY = targetY;
+            if(doSplit)
+            {
+                let newCell = cell.split();
+                user.cells.push(newCell);
+            }
         }
     };
 
