@@ -164,6 +164,7 @@ class GameCell
     }
     launch()
     {
+        this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
         let uX = Math.cos(this.angle);
         let uY = Math.sin(this.angle);
         this.vx += uX * this.launchSpeed;
