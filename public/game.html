@@ -14,7 +14,7 @@
                     this.vx = vx;
                     this.vy = vy;
                 }
-                move()
+                move() //currently not in use
                 {
                     var angle = Math.atan2(mouseY-halfWidth,mouseX-halfWidth);
                     this.vx = Math.cos(angle)*Math.min(1,(Math.abs(mouseX-halfWidth)/20));
@@ -48,18 +48,19 @@
                         this.camX += cells[i].x;
                         this.camY += cells[i].y;
                     }
-                    this.camX = -this.camX/cells.length + halfWidth;
-                    this.camY = -this.camY/cells.length + halfWidth;
-                    translate(this.camX,this.camY);
+                    this.camX = this.camX/cells.length - halfWidth;
+                    this.camY = this.camY/cells.length - halfWidth;
+                    translate(-this.camX,-this.camY);
                 }
             }
             class Client
             {
-                constructor()
+                constructor(camera)
                 {
                     this.localIds = [];
                     this.cellList = [];
                     this.webSock = null;
+                    this.camera = camera;
                 }
                 setSocket(webSock)
                 {
@@ -77,42 +78,12 @@
                     }
                     return null;
                 }
-                updateCells()
+                sendInput()
                 {
-                    for(let i = 0; i < this.localIds.length; i++) //local cell movement and splitting
-                    {
-                        let c = findCellFromId(localIds[i]);
-                        if(c != null)
-                        {
-                            c.move();
-                            //something something about splitting here maybe
-                        }
-                    }
-
-                    this.sendCells();
-                    
-                    for(let i = 0; i < this.cellList.length; i++)
-                    {
-                        this.cellList[i].draw();
-                    }
-                }
-                sendCells()
-                {
-                    let cellDataList = [];
-                    for(let i = 0; i < this.localIds.length; i++)
-                    {
-                        let c = findCellFromId(localIds[i]);
-                        cellDataList.push({
-                            x: c.x,
-                            y: c.y,
-                            id: c.id,
-                            vx: c.vx,
-                            vy: c.vy
-                        });
-                    }
                     this.webSock.send(JSON.stringify({
-                        type: "allCellUpdate",
-                        cellList: cellDataList
+                        type: "input",
+                        x: this.camera.camX + mouseX,
+                        y: this.camera.camY + mouseY
                     }));
                     
                 }
@@ -131,9 +102,18 @@
                         this.cellList.push(new Cell(c.x,c.y,c.id,c.vx,c.vy));
                     }
                 }
+                updateCells()
+                {
+                    this.sendInput();
+                    
+                    for(let i = 0; i < this.cellList.length; i++)
+                    {
+                        this.cellList[i].draw();
+                    }
+                }
             }
-            var client = new Client();
             var cam = new Camera();
+            var client = new Client(cam);
             var connected = false;
             var ws = new WebSocket("ws://127.0.0.1:5524");
             ws.onopen = function() {
