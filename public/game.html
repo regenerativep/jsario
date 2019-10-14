@@ -6,20 +6,21 @@
             var halfWidth = 256;
             class Cell
             {
-                constructor()
+                constructor(x,y,id,vx,vy)
                 {
-                    this.x = 0;
-                    this.y = 0;
-                    this.xVel = 0;
-                    this.yVel = 0;
+                    this.x = x;
+                    this.y = y;
+                    this.id = id;
+                    this.vx = vx;
+                    this.vy = vy;
                 }
                 move()
                 {
                     var angle = Math.atan2(mouseY-halfWidth,mouseX-halfWidth);
-                    this.xVel = Math.cos(angle)*Math.min(1,(Math.abs(mouseX-halfWidth)/20));
-                    this.yVel = Math.sin(angle)*Math.min(1,(Math.abs(mouseY-halfWidth)/20));
-                    this.x += this.xVel;
-                    this.y += this.yVel;
+                    this.vx = Math.cos(angle)*Math.min(1,(Math.abs(mouseX-halfWidth)/20));
+                    this.vy = Math.sin(angle)*Math.min(1,(Math.abs(mouseY-halfWidth)/20));
+                    this.x += this.vx;
+                    this.y += this.vy;
                 }
                 split()
                 {
@@ -52,51 +53,107 @@
                     translate(this.camX,this.camY);
                 }
             }
-            class PetriDish //haha petri dishes hold cells
+            class Client
             {
                 constructor()
                 {
-                    this.clientCells = [new Cell()]; //start out with one local cell
-                    this.serverCells = [];
+                    this.localIds = [];
+                    this.cellList = [];
+                    this.webSock = null;
                 }
-                updateCells(webSock)
+                setSocket(webSock)
                 {
-                    for(let i = 0; i < this.clientCells.length; i++) //local cell movement and splitting
+                    this.webSock = webSock;
+                }
+                findCellFromId(id)
+                {
+                    for(let i = 0; i < this.cellList.length; i++)
                     {
-                        this.clientCells[i].move();
-                        let splitCells = this.clientCells[i].split();
-                        this.clientCells.splice(i,1);
-                        this.clientCells.push(...splitCells);
+                        let cell = this.cellList[i];
+                        if(cell.id == id)
+                        {
+                            return cell;
+                        }
                     }
-                    this.sendCells(webSock);
+                    return null;
+                }
+                updateCells()
+                {
+                    for(let i = 0; i < this.localIds.length; i++) //local cell movement and splitting
+                    {
+                        let c = findCellFromId(localIds[i]);
+                        if(c != null)
+                        {
+                            c.move();
+                            //something something about splitting here maybe
+                        }
+                    }
+
+                    this.sendCells();
                     
-                    //if any client sided cells do not appear in the list that we get back from the server, those cells have died
-                    let allCells = [];
-                    allCells.push(...serverCells);
-                    for(let i = 0; i < allCells.length; i++)
+                    for(let i = 0; i < this.cellList.length; i++)
                     {
-                        allCells[i].draw();
+                        this.cellList[i].draw();
                     }
                 }
-                sendCells(webSock)
+                sendCells()
                 {
-                    webSock.send(this.clientCells);
+                    let cellDataList = [];
+                    for(let i = 0; i < this.localIds.length; i++)
+                    {
+                        let c = findCellFromId(localIds[i]);
+                        cellDataList.push({
+                            x: c.x,
+                            y: c.y,
+                            id: c.id,
+                            vx: c.vx,
+                            vy: c.vy
+                        });
+                    }
+                    this.webSock.send(JSON.stringify({
+                        type: "allCellUpdate",
+                        cellList: cellDataList
+                    }));
+                    
                 }
-                recieveCells(cells)
+                receiveMyCells(ids)
                 {
-                    this.serverCells = cells;
+                    this.clientCellIds = ids;
+                }
+                //here we have to process the list of json objects and turn them into an actual cell list
+                //is this the best way to do this, or should we update the cells in the current list instead of essentially overwriting every time?
+                receiveCells(cells) 
+                {
+                    this.cellList = [];
+                    for(let i = 0; i < cells.length; i++)
+                    {
+                        c = cells[i];
+                        this.cellList.push(new Cell(c.x,c.y,c.id,c.vx,c.vy));
+                    }
                 }
             }
-            var c = new Cell();
-            var pd = new PetriDish();
+            var client = new Client();
             var cam = new Camera();
+            var connected = false;
             var ws = new WebSocket("ws://127.0.0.1:5524");
             ws.onopen = function() {
                 console.log("connected");
+                ws.send(JSON.stringify({
+                    type: "register"
+                }));
+                connected = true;
+                gw.setSocket(ws);
             };
             ws.onmessage = function(ev) {
-                console.log(JSON.parse(ev.data));
-                pd.recieveCells(JSON.parse(ev.data));
+                let data = JSON.parse(ev.data);
+                if (data.type == "youare")
+                {
+                    pd.receiveMyCells(data.cellIds);
+                }
+                else if(data.type == "allCellUpdate")
+                {
+                    pd.receiveCells(data.cellDataList);
+                }
             };
             function setup()
             {
@@ -105,9 +162,12 @@
             function draw()
             {
                 background(0);
-                cam.track(pd.clientCells);
-                pd.updateCells(ws);
                 
+                if(connected)
+                {
+                    cam.track(pd.clientCells);
+                    pd.updateCells(ws);
+                }
                 rect(64,64,64,64);
             }
         </script>
