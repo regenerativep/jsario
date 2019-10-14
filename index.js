@@ -112,6 +112,16 @@ function main()
                 user.cells.push(newCell);
             }
         }
+        if(doSplit)
+        {
+            for(let i = 0; i < user.cells.length; i++)
+            {
+                let cell = user.cells[i];
+                let newCell = cell.split();
+                user.cells.push(newCell);
+            }
+            user.sendCellList();
+        }
     };
 
     webapp = express();
