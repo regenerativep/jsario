@@ -156,6 +156,33 @@
                     client.receiveCells(data.cellList);
                 }
             };
+            function zaggyLine(x,y,l)
+            {
+                let currX = x;
+                let currY = y;
+                while(currX < x + width + l)
+                {
+                    let nextX = currX + l * Math.sqrt(3);
+                    let nextY = (curry = y) ? currY + l/2 : currY - l/2 ;
+                    line(currX,currY,nextX,nextY);
+                    currX = nextX;
+                    currY = nextY;
+                }
+            }
+            function gridLines(x,y,l)
+            {
+
+            }
+            function hexTile(camera)
+            {
+                let x = camera.camX;
+                let y = camera.camY;
+                let len = 10;
+                for(let i = y; i < y + 256; i += len)
+                {
+                    zaggyLine(x,i,len);
+                }
+            }
             function setup()
             {
                 createCanvas(1024, 768);
@@ -165,7 +192,7 @@
             function draw()
             {
                 background(0);
-                
+                hexTile(cam);
                 if(connected)
                 {
                     cam.track(client);
