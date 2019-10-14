@@ -37,6 +37,7 @@ class GameCell
         this.vx = 0;
         this.vy = 0;
         this.id = lastCellId++;
+        this.mass = 32;
     }
     update()
     {
@@ -108,7 +109,8 @@ function main()
                 y: cell.y,
                 id: cell.id,
                 vx: cell.vx,
-                vy: cell.vy
+                vy: cell.vy,
+                mass: cell.mass
             });
         }
         for(let i = 0; i < users.length; i++)
