@@ -9,7 +9,6 @@ var GameCell = wrldJs.GameCell;
 var webapp, wsServer, gameWorld;
 var gameUpdateInterval, clientUpdateInterval;
 var messageResponses = {};
-var lastUserId = 0;
 
 class GameUser
 {
@@ -65,6 +64,26 @@ function findUserFromId(id)
         }
     }
 }
+function idInUsers(id)
+{
+    for(let i = 0; i < users.length; i++)
+    {
+        if(users[i].id == id)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+function getNextAvailableId()
+{
+    let id = 0;
+    while(idInUsers(id))
+    {
+        id++;
+    }
+    return id;
+}
 function main()
 {
     gameWorld = new GameWorld();
@@ -103,6 +122,10 @@ function main()
         }));
     };
     messageResponses["register"] = (data, socket, id) => {
+        if(findUserFromSocket(socket))
+        {
+            return;
+        }
         let cell = new GameCell(gameWorld, 0, 0);
         let user = new GameUser(socket, id);
         user.cells.push(cell);
@@ -156,14 +179,33 @@ function main()
         port: 5524
     });
     wsServer.on("connection", (socket, req) => {
-        console.log("received connection from " + req.connection.remoteAddress);
-        var id = lastUserId++;
+        var id = getNextAvailableId();
+        console.log("received connection from " + req.connection.remoteAddress + ", id: " + id);
         socket.on("message", (dataStr) => {
             let dataObj = JSON.parse(dataStr);
             let actionName = dataObj.type;
             if(messageResponses.hasOwnProperty(actionName))
             {
                 messageResponses[actionName](dataObj, socket, id);
+            }
+        });
+        socket.on("close", (code, reason) => {
+            let user = findUserFromId(id);
+            if(user == null)
+            {
+                console.log("an unregistered user disconnected");
+            }
+            else
+            {
+                //remove user's cells from world
+                for(let i = 0; i < user.cells.length; i++)
+                {
+                    let cell = user.cells[i];
+                    gameWorld.cellList.splice(gameWorld.cellList.indexOf(cell), 1);
+                }
+                
+                console.log("user id " + id + " disconnected" + ((reason != null && reason != "") ? (" (" + reason + ")") : ""));
+                users.splice(users.indexOf(user), 1);
             }
         });
     });
