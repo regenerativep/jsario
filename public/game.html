@@ -190,7 +190,8 @@
                 {
                     let nextX = currX + l/2 * Math.sqrt(3);
                     let nextY = (up) ? currY + l/2 : currY - l/2 ;
-                    stroke(255,255,255);
+                    stroke(50,50,50);
+                    strokeWeight(2);
                     line(currX,currY,nextX,nextY);
                     currX = nextX;
                     currY = nextY;
@@ -228,9 +229,9 @@
                 if(connected)
                 {
                     cam.track(client);
+                    hexTile(cam);
                     client.updateCells();
                 }
-                hexTile(cam);
                 rect(64,64,64,64);
 
                 lastSpacePressed = spacePressed;
