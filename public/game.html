@@ -70,6 +70,7 @@
                 {
                     this.localIds = [];
                     this.cellList = [];
+                    this.foodList = [];
                     this.webSock = null;
                     this.camera = camera;
                 }
@@ -128,14 +129,20 @@
                     {
                         this.cellList[i].draw();
                     }
+                    for(let i = 0; i < this.foodList.length; i++) //if we want to optimize the number of foods we are drawing, we may want to bring the quadtree over
+                    {
+                        let particle = this.foodList[i];
+                        ellipse(particle.x, particle.y, foodRadius * 2, foodRadius * 2);
+                    }
                 }
             }
             var halfWidth, halfHeight;
             var cam = new Camera();
             var client = new Client(cam);
             var connected = false;
-            var ws = new WebSocket("ws://10.229.217.22:5524");
+            var ws = new WebSocket("ws://127.0.0.1:5524");
             var spacePressed, lastSpacePressed;
+            var foodRadius = 4;
             ws.onopen = function() {
                 console.log("connected");
                 ws.send(JSON.stringify({
@@ -148,12 +155,30 @@
                 let data = JSON.parse(ev.data);
                 if (data.type == "youare")
                 {
-                    console.log(data.cellIds);
                     client.receiveMyCells(data.cellIds);
                 }
                 else if(data.type == "allCellUpdate")
                 {
                     client.receiveCells(data.cellList);
+                }
+                else if(data.type == "createFood")
+                {
+                    client.foodList.push({
+                        x: data.x,
+                        y: data.y,
+                        id: data.id
+                    });
+                }
+                else if(data.type == "removeFood")
+                {
+                    for(let i = 0; i < client.foodList.length; i++)
+                    {
+                        if(client.foodList[i].id == data.id)
+                        {
+                            client.foodList.splice(i, 1);
+                            break;
+                        }
+                    }
                 }
             };
             function zaggyLine(x,y,l, wid)

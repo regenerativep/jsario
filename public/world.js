@@ -1,3 +1,6 @@
+//import { EventEmitter } from "events";
+var EventEmitter = require("events").EventEmitter;
+
 var lastCellId = 0;
 var lastFoodId = 0;
 function projectVectors(ax, ay, bx, by)
@@ -5,10 +8,23 @@ function projectVectors(ax, ay, bx, by)
     let val = ((ax * bx) + (ay * by));// / (bx ** 2 + by ** 2)); //for what we are using it for, b is a unit vector
     return { x: bx * val, y: by * val };
 }
+function rectangleInRectangle(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2)
+{
+    return ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1;
+}
 class Quadtree
 {
-    constructor(x, y, width, height)
+    constructor(x, y, width, height, parent)
     {
+        this.parent = parent;
+        if(parent == null)
+        {
+            this.depth = 0;
+        }
+        else
+        {
+            this.depth = parent.depth + 1;
+        }
         this.children = null;
         this.item = null;
         this.x = x;
@@ -16,41 +32,38 @@ class Quadtree
         this.width = width;
         this.height = height;
         this.widd2 = x + width / 2;
-        this.hgtd2 = y +height / 2;
+        this.hgtd2 = y + height / 2;
+        this.maxDepth = 32;
     }
     addItem(item)
     {
-        if(this.item == null)
-        {
-            if(this.children == null)
-            {
-                this.item = item;
-            }
-            else
-            {
-                let child = 0;
-                if(item.x > this.widd2)
-                {
-                    if(item.y > this.hgtd2)
-                    {
-                        child = 3;
-                    }
-                    else
-                    {
-                        child = 1;
-                    }
-                }
-                else if(item.y > this.hgtd2)
-                {
-                    child = 2;
-                }
-                this.children[child].addItem(item);
-            }
-        }
-        else
+        if(this.item != null)
         {
             this.split();
-            this.addItem(item);
+        }
+        if(this.children != null)
+        {
+            let child = 0;
+            if(item.x > this.widd2)
+            {
+                if(item.y > this.hgtd2)
+                {
+                    child = 3;
+                }
+                else
+                {
+                    child = 1;
+                }
+            }
+            else if(item.y > this.hgtd2)
+            {
+                child = 2;
+            }
+            this.children[child].addItem(item);
+        }
+        else if(this.item == null)
+        {
+            this.item = item;
         }
     }
     getItemsIn(cond)
@@ -68,7 +81,7 @@ class Quadtree
                     let items = [];
                     for(let i = 0; i < this.children.length; i++)
                     {
-                        items.push(this.children[i].getItemsIn(cond));
+                        items.push(...this.children[i].getItemsIn(cond));
                     }
                     return items;
                 }
@@ -132,29 +145,41 @@ class Quadtree
     }
     split()
     {
+        if(this.depth >= this.maxDepth)
+        {
+            //return;
+        }
         this.children = [];
-        let wd2 = width / 2;
-        let hd2 = height / 2;
-        this.children[0] = new Quadtree(x, y, wd2, hd2);
-        this.children[1] = new Quadtree(x + wd2, y, wd2, hd2);
-        this.children[2] = new Quadtree(x, y + hd2, wd2, hd2);
-        this.children[3] = new Quadtree(x + wd2, y + hd2, wd2, hd2);
-        this.addItem(this.item);
+        let wd2 = this.width / 2;
+        let hd2 = this.height / 2;
+        this.children[0] = new Quadtree(this.x, this.y, wd2, hd2, this);
+        this.children[1] = new Quadtree(this.x + wd2, this.y, wd2, hd2, this);
+        this.children[2] = new Quadtree(this.x, this.y + hd2, wd2, hd2, this);
+        this.children[3] = new Quadtree(this.x + wd2, this.y + hd2, wd2, hd2, this);
+        let item = this.item;
+        this.item = null;
+        this.addItem(item);
     }
 }
 class GameWorld
 {
-    constructor()
+    constructor(width, height)
     {
-        //todo calculate acceleration based on forces + mass, not acceleration itself
+        this.emitter = new EventEmitter();
+        this.width = width;
+        this.height = height;
         this.cellList = [];
-        this.foodList = [];
+        this.foodTree = new Quadtree(0, 0, width, height, null);
         this.friction = 1;
         this.cellularFriction = 0.1;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.radiusMultiplier = 6;
         this.cellSpreadDivider = 1;
+        this.foodGain = 1;
+        this.foodRadius = 2;
+        this.foodAccumulateRate = 0.02;
+        this.foodToPlace = 0;
     }
     findCellFromId(id)
     {
@@ -170,11 +195,13 @@ class GameWorld
     }
     createFood(x, y)
     {
-        this.foodList.push({
+        let particle = {
             x: x,
             y: y,
             id: lastFoodId++
-        });
+        };
+        this.foodTree.addItem(particle);
+        this.emitter.emit("createFood", particle);
     }
     update()
     {
@@ -217,10 +244,15 @@ class GameWorld
                 }
             }
         }
-        for(let i = 0; i < this.cellList.length; i++)
+        this.foodToPlace += this.foodAccumulateRate;
+        while(this.foodToPlace > 1)
         {
-            this.cellList[i].update();
+            let x = Math.random() * this.width;
+            let y = Math.random() * this.height;
+            this.createFood(x, y);
+            this.foodToPlace--;
         }
+        this.emitter.emit("update");
     }
 }
 class GameCell
@@ -244,6 +276,9 @@ class GameCell
         this.launchImpulse = 50;
         this.angle = 0;
         this.group = [];
+        var thisCell = this;
+        this.world.emitter.on("update", () => { thisCell.update(); }); //todo: remove this listener on destroy
+        this.world.emitter.emit("createCell", this);
     }
     changeMass(newMass)
     {
@@ -252,8 +287,8 @@ class GameCell
     }
     apply(mx, my)
     {
-        this.mx += mx;// / this.mass;
-        this.my += my;// / this.mass;
+        this.mx += mx;
+        this.my += my;
     }
     update()
     {
@@ -299,6 +334,32 @@ class GameCell
         this.vy = this.my / this.mass;
         this.x += this.vx;
         this.y += this.vy;
+        if(this.x < 0) this.x = 0;
+        if(this.y < 0) this.y = 0;
+        if(this.x > this.world.width) this.x = this.world.width;
+        if(this.y > this.world.height) this.y = this.world.height;
+        
+        let cx1 = this.x - this.radius;
+        let cy1 = this.y - this.radius;
+        let cx2 = this.x + this.radius;
+        let cy2 = this.y + this.radius;
+        let nearbyFood = this.world.foodTree.getItemsIn((rx, ry, rw, rh) => {
+            return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, rx + rh);
+        });
+        let foodRadiusSqr = this.world.foodRadius ** 2;
+        for(let j = 0; j < nearbyFood.length; j++)
+        {
+            let particle = nearbyFood[j];
+            let distSqr = (particle.x - this.x) ** 2 + (particle.y - this.y) ** 2;
+            if(distSqr < foodRadiusSqr + this.radius ** 2)
+            {
+                //eat the food particle
+                this.world.foodTree.removeItem(particle);
+                this.world.emitter.emit("removeFood", particle);
+                this.changeMass(this.mass + this.world.foodGain);
+                console.log("ate a particle");
+            }
+        }
     }
     split()
     {
@@ -329,8 +390,8 @@ class GameCell
 try
 {
     module.exports = {
-        GameWorld: GameWorld,
-        GameCell: GameCell
+        GameWorld,
+        GameCell
     };
 }
 catch(e)

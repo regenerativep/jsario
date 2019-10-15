@@ -1,10 +1,11 @@
-"use strict";
-var express = require("express");
-var WebSocket = require("ws");
-
+var Server = require("ws").Server;
 var wrldJs = require("./public/world.js");
-var GameWorld = wrldJs.GameWorld;
-var GameCell = wrldJs.GameCell;
+var GameWorld = wrldJs.GameWorld, GameCell = wrldJs.GameCell;
+var express = require("express");
+
+// import { GameWorld, GameCell } from "./public/world.js";
+// import { Server } from "ws";
+// import express from "express";
 
 var webapp, wsServer, gameWorld;
 var gameUpdateInterval, clientUpdateInterval;
@@ -86,7 +87,31 @@ function getNextAvailableId()
 }
 function main()
 {
-    gameWorld = new GameWorld();
+    gameWorld = new GameWorld(2048, 2048);
+    gameWorld.emitter.on("createFood", (particle) => {
+        for(let i = 0; i < users.length; i++)
+        {
+            let user = users[i];
+            user.socket.send(JSON.stringify({
+                type: "createFood",
+                x: particle.x,
+                y: particle.y,
+                id: particle.id
+            }));
+        }
+    });
+    gameWorld.emitter.on("removeFood", (particle) => {
+        for(let i = 0; i < users.length; i++)
+        {
+            let user = users[i];
+            user.socket.send(JSON.stringify({
+                type: "removeFood",
+                x: particle.x,
+                y: particle.y,
+                id: particle.id
+            }));
+        }
+    });
     gameUpdateInterval = setInterval(() => {
         gameWorld.update();
     }, 1000 / 60);
@@ -171,12 +196,15 @@ function main()
             user.sendCellList();
         }
     };
-
+    
     webapp = express();
+    webapp.on("error", (parent) => {
+        console.log("something went wrong when running web server");
+    });
     webapp.use(express.static("public"));
-    webapp.listen(80, function() { console.log("webserver running"); })
+    webapp.listen(82, function() { console.log("webserver running"); })
 
-    wsServer = new WebSocket.Server({
+    wsServer = new Server({
         port: 5524
     });
     wsServer.on("connection", (socket, req) => {
@@ -209,6 +237,10 @@ function main()
                 users.splice(users.indexOf(user), 1);
             }
         });
+    });
+    wsServer.on("error", (err) => {
+        console.log("something went wrong when creating websocket server")
+        console.log(err);
     });
 }
 
