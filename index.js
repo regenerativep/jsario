@@ -174,6 +174,7 @@ function main()
 
     webapp = express();
     webapp.use(express.static("public"));
+    webapp.listen(80, function() { console.log("webserver running"); })
 
     wsServer = new WebSocket.Server({
         port: 5524

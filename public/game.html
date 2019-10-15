@@ -134,7 +134,7 @@
             var cam = new Camera();
             var client = new Client(cam);
             var connected = false;
-            var ws = new WebSocket("ws://127.0.0.1:5524");
+            var ws = new WebSocket("ws://10.229.217.22:5524");
             var spacePressed, lastSpacePressed;
             ws.onopen = function() {
                 console.log("connected");
@@ -156,12 +156,12 @@
                     client.receiveCells(data.cellList);
                 }
             };
-            function zaggyLine(x,y,l)
+            function zaggyLine(x,y,l, wid)
             {
                 let currX = x;
                 let currY = y;
                 let up = false;
-                while(currX < x + width + l)
+                while(currX < x + width + l + wid)
                 {
                     let nextX = currX + l * Math.sqrt(3);
                     let nextY = (up) ? currY + l/2 : currY - l/2 ;
@@ -179,12 +179,15 @@
             function hexTile(camera)
             {
                 let len = 30;
-                let x = camera.camX - camera.camX % (len*Math.sqrt(3));
-                let y = camera.camY - camera.camY % (2*len);
-                let offset = ((camera.camX - camera.camX % (len*Math.sqrt(3)))/(len*Math.sqrt(3))) % 2 == 0 ? false:true;
-                for(let i = y; i < y + 256; i += len*1.5)
+                let wid = len*Math.sqrt(3);
+                let x = camera.camX - camera.camX % (wid * 2) - wid * 4;
+                let y = camera.camY - camera.camY % (len * 3) - len * 1.5;
+                //let offset = ((camera.camX - camera.camX % (wid))/(wid)) % 2 == 0 ? false:true;
+                let offset = false;
+
+                for(let i = y; i < y + height + (len * 3); i += len*1.5)
                 {
-                    zaggyLine(x + (offset ? len*Math.sqrt(3) :0),i,len);
+                    zaggyLine(x + (offset ? wid : 0),i,len, wid * 4);
                     offset = !offset;
                 }
             }
