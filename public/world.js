@@ -1,5 +1,46 @@
 //import { EventEmitter } from "events";
-var EventEmitter = require("events").EventEmitter;
+var EventEmitter;
+try
+{
+    EventEmitter = require("events").EventEmitter;
+}
+catch(e)
+{
+    //we're running in browser
+    EventEmitter = class EventEmitter
+    {
+        constructor()
+        {
+            this.events = {};
+            this.addEventListener = this.on;
+        }
+        on(name, action)
+        {
+            if(this.events.hasOwnProperty(name))
+            {
+                this.events[name].push(action);
+            }
+            else
+            {
+                this.events[name] = [action];
+            }
+        }
+        emit(name)
+        {
+            if(!this.events.hasOwnProperty(name))
+            {
+                return;
+            }
+            let args = arguments.slice(1);
+            let event = this.events[name];
+            for(let i = 0; i < event.length; i++)
+            {
+                let listener = event[i];
+                listener(...args);
+            }
+        }
+    }
+}
 
 var lastCellId = 0;
 var lastFoodId = 0;
@@ -34,6 +75,7 @@ class Quadtree
         this.widd2 = x + width / 2;
         this.hgtd2 = y + height / 2;
         this.maxDepth = 32;
+        this.triggered = false;
     }
     addItem(item)
     {
@@ -68,28 +110,31 @@ class Quadtree
     }
     getItemsIn(cond)
     {
+        this.triggered = false;
         if(cond(this.x, this.y, this.width, this.height))
         {
-            if(this.item == null)
+            if(this.children == null)
             {
-                if(this.children == null)
+                this.triggered = true;
+                if(this.item == null)
                 {
                     return [];
                 }
                 else
                 {
-                    let items = [];
-                    for(let i = 0; i < this.children.length; i++)
-                    {
-                        items.push(...this.children[i].getItemsIn(cond));
-                    }
-                    return items;
+                    return [this.item];
                 }
             }
             else
             {
-                return [this.item];
+                let items = [];
+                for(let i = 0; i < this.children.length; i++)
+                {
+                    items.push(...this.children[i].getItemsIn(cond));
+                }
+                return items;
             }
+            
         }
         return [];
     }
@@ -116,26 +161,6 @@ class Quadtree
                     child = 2;
                 }
                 this.children[child].removeItem(item);
-                let itemCount = 0;
-                let foundItem = null;
-                for(let i = 0; i < this.children.length; i++)
-                {
-                    let childsItem = this.children[i].item;
-                    if(childsItem != null)
-                    {
-                        foundItem = childsItem;
-                        itemCount++;
-                        if(itemCount > 1)
-                        {
-                            break;
-                        }
-                    }
-                }
-                if(itemCount <= 1)
-                {
-                    this.item = foundItem;
-                    this.children = null;
-                }
             }
         }
         else
@@ -334,10 +359,26 @@ class GameCell
         this.vy = this.my / this.mass;
         this.x += this.vx;
         this.y += this.vy;
-        if(this.x < 0) this.x = 0;
-        if(this.y < 0) this.y = 0;
-        if(this.x > this.world.width) this.x = this.world.width;
-        if(this.y > this.world.height) this.y = this.world.height;
+        if(this.x < 0)
+        {
+            this.x = 0;
+            this.mx = 0;
+        }
+        if(this.y < 0)
+        {
+            this.y = 0;
+            this.my = 0;
+        }
+        if(this.x > this.world.width)
+        {
+            this.x = this.world.width;
+            this.mx = 0;
+        }
+        if(this.y > this.world.height)
+        {
+            this.y = this.world.height;
+            this.my = 0;
+        }
         
         let cx1 = this.x - this.radius;
         let cy1 = this.y - this.radius;
