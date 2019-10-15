@@ -160,13 +160,16 @@
             {
                 let currX = x;
                 let currY = y;
+                let up = false;
                 while(currX < x + width + l)
                 {
                     let nextX = currX + l * Math.sqrt(3);
-                    let nextY = (curry = y) ? currY + l/2 : currY - l/2 ;
+                    let nextY = (up) ? currY + l/2 : currY - l/2 ;
+                    stroke(255,255,255);
                     line(currX,currY,nextX,nextY);
                     currX = nextX;
                     currY = nextY;
+                    up = !up;
                 }
             }
             function gridLines(x,y,l)
@@ -175,12 +178,14 @@
             }
             function hexTile(camera)
             {
-                let x = camera.camX;
-                let y = camera.camY;
-                let len = 10;
-                for(let i = y; i < y + 256; i += len)
+                let len = 30;
+                let x = camera.camX - camera.camX % (len*Math.sqrt(3));
+                let y = camera.camY - camera.camY % (2*len);
+                let offset = ((camera.camX - camera.camX % (len*Math.sqrt(3)))/(len*Math.sqrt(3))) % 2 == 0 ? false:true;
+                for(let i = y; i < y + 256; i += len*1.5)
                 {
-                    zaggyLine(x,i,len);
+                    zaggyLine(x + (offset ? len*Math.sqrt(3) :0),i,len);
+                    offset = !offset;
                 }
             }
             function setup()
@@ -192,12 +197,12 @@
             function draw()
             {
                 background(0);
-                hexTile(cam);
                 if(connected)
                 {
                     cam.track(client);
                     client.updateCells();
                 }
+                hexTile(cam);
                 rect(64,64,64,64);
 
                 lastSpacePressed = spacePressed;
