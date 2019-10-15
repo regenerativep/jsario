@@ -1,8 +1,146 @@
 var lastCellId = 0;
+var lastFoodId = 0;
 function projectVectors(ax, ay, bx, by)
 {
     let val = ((ax * bx) + (ay * by));// / (bx ** 2 + by ** 2)); //for what we are using it for, b is a unit vector
     return { x: bx * val, y: by * val };
+}
+class Quadtree
+{
+    constructor(x, y, width, height)
+    {
+        this.children = null;
+        this.item = null;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.widd2 = x + width / 2;
+        this.hgtd2 = y +height / 2;
+    }
+    addItem(item)
+    {
+        if(this.item == null)
+        {
+            if(this.children == null)
+            {
+                this.item = item;
+            }
+            else
+            {
+                let child = 0;
+                if(item.x > this.widd2)
+                {
+                    if(item.y > this.hgtd2)
+                    {
+                        child = 3;
+                    }
+                    else
+                    {
+                        child = 1;
+                    }
+                }
+                else if(item.y > this.hgtd2)
+                {
+                    child = 2;
+                }
+                this.children[child].addItem(item);
+            }
+        }
+        else
+        {
+            this.split();
+            this.addItem(item);
+        }
+    }
+    getItemsIn(cond)
+    {
+        if(cond(this.x, this.y, this.width, this.height))
+        {
+            if(this.item == null)
+            {
+                if(this.children == null)
+                {
+                    return [];
+                }
+                else
+                {
+                    let items = [];
+                    for(let i = 0; i < this.children.length; i++)
+                    {
+                        items.push(this.children[i].getItemsIn(cond));
+                    }
+                    return items;
+                }
+            }
+            else
+            {
+                return [this.item];
+            }
+        }
+        return [];
+    }
+    removeItem(item)
+    {
+        if(this.item == null)
+        {
+            if(this.children != null)
+            {
+                let child = 0;
+                if(item.x > this.widd2)
+                {
+                    if(item.y > this.hgtd2)
+                    {
+                        child = 3;
+                    }
+                    else
+                    {
+                        child = 1;
+                    }
+                }
+                else if(item.y > this.hgtd2)
+                {
+                    child = 2;
+                }
+                this.children[child].removeItem(item);
+                let itemCount = 0;
+                let foundItem = null;
+                for(let i = 0; i < this.children.length; i++)
+                {
+                    let childsItem = this.children[i].item;
+                    if(childsItem != null)
+                    {
+                        foundItem = childsItem;
+                        itemCount++;
+                        if(itemCount > 1)
+                        {
+                            break;
+                        }
+                    }
+                }
+                if(itemCount <= 1)
+                {
+                    this.item = foundItem;
+                    this.children = null;
+                }
+            }
+        }
+        else
+        {
+            this.item = null;
+        }
+    }
+    split()
+    {
+        this.children = [];
+        let wd2 = width / 2;
+        let hd2 = height / 2;
+        this.children[0] = new Quadtree(x, y, wd2, hd2);
+        this.children[1] = new Quadtree(x + wd2, y, wd2, hd2);
+        this.children[2] = new Quadtree(x, y + hd2, wd2, hd2);
+        this.children[3] = new Quadtree(x + wd2, y + hd2, wd2, hd2);
+        this.addItem(this.item);
+    }
 }
 class GameWorld
 {
@@ -10,6 +148,7 @@ class GameWorld
     {
         //todo calculate acceleration based on forces + mass, not acceleration itself
         this.cellList = [];
+        this.foodList = [];
         this.friction = 1;
         this.cellularFriction = 0.1;
         this.maxSplitCount = 16;
@@ -28,6 +167,14 @@ class GameWorld
             }
         }
         return null;
+    }
+    createFood(x, y)
+    {
+        this.foodList.push({
+            x: x,
+            y: y,
+            id: lastFoodId++
+        });
     }
     update()
     {
