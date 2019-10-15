@@ -171,7 +171,7 @@ class GameWorld
         this.cellList = [];
         this.foodTree = new Quadtree(0, 0, width, height, null);
         this.friction = 1;
-        this.cellularFriction = 0.1;
+        this.cellularFriction = 0.02;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.radiusMultiplier = 6;

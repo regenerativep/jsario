@@ -188,23 +188,23 @@
                 let up = false;
                 while(currX < x + width + l + wid)
                 {
-                    let nextX = currX + l * Math.sqrt(3);
+                    let nextX = currX + l/2 * Math.sqrt(3);
                     let nextY = (up) ? currY + l/2 : currY - l/2 ;
                     stroke(255,255,255);
                     line(currX,currY,nextX,nextY);
                     currX = nextX;
                     currY = nextY;
+                    if(up)
+                    {
+                        line(currX,currY,currX,currY+l);
+                    }
                     up = !up;
                 }
-            }
-            function gridLines(x,y,l)
-            {
-
             }
             function hexTile(camera)
             {
                 let len = 30;
-                let wid = len*Math.sqrt(3);
+                let wid = len/2*Math.sqrt(3);
                 let x = camera.camX - camera.camX % (wid * 2) - wid * 4;
                 let y = camera.camY - camera.camY % (len * 3) - len * 1.5;
                 //let offset = ((camera.camX - camera.camX % (wid))/(wid)) % 2 == 0 ? false:true;
