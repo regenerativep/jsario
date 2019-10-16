@@ -60,6 +60,7 @@ class Camera
         translate(-this.camX,-this.camY);
         if(showDebug)
         {
+            drawQuadtree(client.foodTree);
             for(let i = 0; i < cells.length; i++)
             {
                 let cell = cells[i];
@@ -110,10 +111,6 @@ class Client
     sendInput()
     {
         let doSplit = spacePressed && !lastSpacePressed;
-        if(doSplit)
-        {
-            console.log("sending split");
-        }
         this.webSock.send(JSON.stringify({
             type: "input",
             x: this.camera.camX + mouseX,
@@ -125,7 +122,7 @@ class Client
     receiveMyCells(ids)
     {
         this.localIds = ids;
-        console.log(this.localIds);
+        //console.log(this.localIds);
     }
     //here we have to process the list of json objects and turn them into an actual cell list
     //is this the best way to do this, or should we update the cells in the current list instead of essentially overwriting every time?
@@ -272,7 +269,6 @@ function draw()
     if(connected)
     {
         cam.track(client);
-        drawQuadtree(client.foodTree);
         hexTile(cam);
         client.updateCells();
     }

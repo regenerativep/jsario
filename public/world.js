@@ -1,12 +1,13 @@
 //import { EventEmitter } from "events";
 var EventEmitter;
-try
+/*try
 {
     EventEmitter = require("events").EventEmitter;
 }
 catch(e)
-{
+{*/
     //we're running in browser
+    //nevermind we dont care. we're using our own
     EventEmitter = class EventEmitter
     {
         constructor()
@@ -31,7 +32,11 @@ catch(e)
             {
                 return;
             }
-            let args = arguments.slice(1);
+            let args = [];
+            for(let i = 1; i < arguments.length; i++)
+            {
+                args.push(arguments[i]);
+            }
             let event = this.events[name];
             for(let i = 0; i < event.length; i++)
             {
@@ -40,7 +45,7 @@ catch(e)
             }
         }
     }
-}
+//}
 
 var lastCellId = 0;
 var lastFoodId = 0;
@@ -86,21 +91,8 @@ class Quadtree
         if(this.children != null)
         {
             let child = 0;
-            if(item.x > this.widd2)
-            {
-                if(item.y > this.hgtd2)
-                {
-                    child = 3;
-                }
-                else
-                {
-                    child = 1;
-                }
-            }
-            else if(item.y > this.hgtd2)
-            {
-                child = 2;
-            }
+            child |= item.x > this.widd2 ? 1 : 0;
+            child |= item.y > this.hgtd2 ? 2 : 0;
             this.children[child].addItem(item);
         }
         else if(this.item == null)
@@ -203,7 +195,7 @@ class GameWorld
         this.cellSpreadDivider = 1;
         this.foodGain = 1;
         this.foodRadius = 2;
-        this.foodAccumulateRate = 0.02;
+        this.foodAccumulateRate = 0.5;
         this.foodToPlace = 0;
     }
     findCellFromId(id)
@@ -385,7 +377,7 @@ class GameCell
         let cx2 = this.x + this.radius;
         let cy2 = this.y + this.radius;
         let nearbyFood = this.world.foodTree.getItemsIn((rx, ry, rw, rh) => {
-            return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, rx + rh);
+            return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
         });
         let foodRadiusSqr = this.world.foodRadius ** 2;
         for(let j = 0; j < nearbyFood.length; j++)
@@ -398,7 +390,6 @@ class GameCell
                 this.world.foodTree.removeItem(particle);
                 this.world.emitter.emit("removeFood", particle);
                 this.changeMass(this.mass + this.world.foodGain);
-                console.log("ate a particle");
             }
         }
     }
