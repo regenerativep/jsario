@@ -202,6 +202,12 @@ function main()
         console.log("something went wrong when running web server");
     });
     webapp.use(express.static("public"));
+    webapp.get("/", (req, res) => {
+        res.redirect("/index.html");
+    });
+    webapp.get("/index.html", (req, res) => {
+        res.redirect("/game.html");
+    });
     webapp.listen(82, function() { console.log("webserver running"); })
 
     wsServer = new Server({
