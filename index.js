@@ -1,7 +1,7 @@
 var Server = require("ws").Server;
 var wrldJs = require("./public/world.js");
 var GameWorld = wrldJs.GameWorld, GameCell = wrldJs.GameCell;
-var express = require("express");
+var WebServer = require("./webserver.js")();
 
 // import { GameWorld, GameCell } from "./public/world.js";
 // import { Server } from "ws";
@@ -30,6 +30,14 @@ class GameUser
             type: "youare",
             cellIds: cellIds
         }));
+    }
+    close()
+    {
+        for(let i = 0; i < this.cells.length; i++)
+        {
+            let cell = this.cells[i];
+            gameWorld.cellList.splice(gameWorld.cellList.indexOf(cell), 1);
+        }
     }
 }
 
@@ -196,20 +204,6 @@ function main()
             user.sendCellList();
         }
     };
-    
-    webapp = express();
-    webapp.on("error", (parent) => {
-        console.log("something went wrong when running web server");
-    });
-    webapp.use(express.static("public"));
-    webapp.get("/", (req, res) => {
-        res.redirect("/index.html");
-    });
-    webapp.get("/index.html", (req, res) => {
-        res.redirect("/game.html");
-    });
-    webapp.listen(82, function() { console.log("webserver running"); })
-
     wsServer = new Server({
         port: 5524
     });
@@ -233,11 +227,7 @@ function main()
             else
             {
                 //remove user's cells from world
-                for(let i = 0; i < user.cells.length; i++)
-                {
-                    let cell = user.cells[i];
-                    gameWorld.cellList.splice(gameWorld.cellList.indexOf(cell), 1);
-                }
+                user.close();
                 
                 console.log("user id " + id + " disconnected" + ((reason != null && reason != "") ? (" (" + reason + ")") : ""));
                 users.splice(users.indexOf(user), 1);

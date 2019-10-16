@@ -1,51 +1,40 @@
-//import { EventEmitter } from "events";
-var EventEmitter;
-/*try
+class EventEmitter
 {
-    EventEmitter = require("events").EventEmitter;
-}
-catch(e)
-{*/
-    //we're running in browser
-    //nevermind we dont care. we're using our own
-    EventEmitter = class EventEmitter
+    constructor()
     {
-        constructor()
+        this.events = {};
+        this.addEventListener = this.on;
+    }
+    on(name, action)
+    {
+        if(this.events.hasOwnProperty(name))
         {
-            this.events = {};
-            this.addEventListener = this.on;
+            this.events[name].push(action);
         }
-        on(name, action)
+        else
         {
-            if(this.events.hasOwnProperty(name))
-            {
-                this.events[name].push(action);
-            }
-            else
-            {
-                this.events[name] = [action];
-            }
-        }
-        emit(name)
-        {
-            if(!this.events.hasOwnProperty(name))
-            {
-                return;
-            }
-            let args = [];
-            for(let i = 1; i < arguments.length; i++)
-            {
-                args.push(arguments[i]);
-            }
-            let event = this.events[name];
-            for(let i = 0; i < event.length; i++)
-            {
-                let listener = event[i];
-                listener(...args);
-            }
+            this.events[name] = [action];
         }
     }
-//}
+    emit(name)
+    {
+        if(!this.events.hasOwnProperty(name))
+        {
+            return;
+        }
+        let args = [];
+        for(let i = 1; i < arguments.length; i++)
+        {
+            args.push(arguments[i]);
+        }
+        let event = this.events[name];
+        for(let i = 0; i < event.length; i++)
+        {
+            let listener = event[i];
+            listener(...args);
+        }
+    }
+}
 
 var lastCellId = 0;
 var lastFoodId = 0;
