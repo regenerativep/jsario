@@ -12,16 +12,12 @@ class GameCell
         this.y = y;
         this.vx = 0;
         this.vy = 0;
-        this.mx = 0;
-        this.my = 0;
         this.id = world.requestEntityId();
         this.changeMass(32);
         this.targetX = 0;
         this.targetY = 0;
-        this.maxMomentum = 3;
-        this.maxImpulse = 30;
-        this.impulseWhenMax = 1;
-        this.launchImpulse = 50;
+        this.moveAcceleration = 1;
+        this.launchImpulse = 10;
         this.angle = 0;
         this.group = [];
         var thisCell = this;
@@ -34,76 +30,59 @@ class GameCell
     {
         this.mass = newMass;
         this.radius = Math.sqrt(this.mass / Math.PI) * this.world.radiusMultiplier;
+        this.maxSpeed = this.world.maxSpeedMultiplier / Math.pow(this.radius, 0.449);
         this.world.pushEntityUpdate(this, "mass", "radius");
     }
-    apply(mx, my)
+    apply(vx, vy)
     {
-        this.mx += mx;
-        this.my += my;
+        this.vx += vx;
+        this.vy += vy;
     }
     update()
     {
         this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
         let uX = Math.cos(this.angle);
         let uY = Math.sin(this.angle);
-        let magnitude = this.maxMomentum; //may want to change in future
+        let magnitude = this.moveAcceleration;
         this.apply(uX * magnitude, uY * magnitude);
-
-        let distSqr = (this.mx ** 2) + (this.my ** 2);
-        let dist = null;
-        if(distSqr > this.world.friction ** 2)
+        
+        let distSqr = (this.vx ** 2) + (this.vy ** 2);
+        let dist = Math.sqrt(distSqr);
+        if(dist > this.maxSpeed)
         {
-            let dist = Math.sqrt(distSqr);
-            uX = this.mx / dist;
-            uY = this.my / dist;
-            this.apply(-uX * this.world.friction, -uY * this.world.friction);
-        }
-        else
-        {
-            this.mx = 0;
-            this.my = 0;
-        }
-        if(distSqr > this.maxImpulse ** 2)
-        {
-            if(dist == null)
+            uX = this.vx / dist;
+            uY = this.vy / dist;
+            if(dist > this.maxSpeed + this.world.friction)
             {
-                dist = Math.sqrt(distSqr);
-            }
-            if(dist < this.maxImpulse + this.impulseWhenMax)
-            {
-                this.mx = (this.mx / dist) * this.maxImpulse;
-                this.my = (this.my / dist) * this.maxImpulse;
+                this.apply(-uX * this.world.friction, -uY * this.world.friction);
             }
             else
             {
-                uX = this.mx / dist;
-                uY = this.my / dist;
-                this.apply(-uX * this.impulseWhenMax, -uY * this.impulseWhenMax);
+                this.vx = uX * this.maxSpeed;
+                this.vy = uY * this.maxSpeed;
             }
         }
-        this.vx = this.mx / this.mass;
-        this.vy = this.my / this.mass;
         let newX = this.x + this.vx;
         let newY = this.y + this.vy;
         if(newX < 0)
         {
             newX = 0;
-            this.mx = 0;
+            this.vx = 0;
         }
         if(newY < 0)
         {
             newY = 0;
-            this.my = 0;
+            this.vy = 0;
         }
         if(newX > this.world.width)
         {
             newX = this.world.width;
-            this.mx = 0;
+            this.vx = 0;
         }
         if(newY > this.world.height)
         {
             newY = this.world.height;
-            this.my = 0;
+            this.vy = 0;
         }
         this.changePosition(newX, newY);
         
@@ -123,12 +102,13 @@ class GameCell
                 nearbyFood.splice(j, 1);
             }
         }
-        let foodRadiusSqr = this.world.foodRadius ** 2;
+        //let foodRadiusSqr = this.world.foodRadius ** 2;
         for(let j = 0; j < nearbyFood.length; j++)
         {
             let particle = nearbyFood[j];
             let distSqr = (particle.x - this.x) ** 2 + (particle.y - this.y) ** 2;
-            if(distSqr < foodRadiusSqr + this.radius ** 2)
+            let foodDist = Math.sqrt(distSqr);
+            if(foodDist < this.world.foodRadius + this.radius)
             {
                 //eat the food particle
                 this.world.removeEntity(particle);
@@ -142,8 +122,8 @@ class GameCell
         let halfMass = this.mass / 2;
         this.changeMass(halfMass);
         cell.changeMass(halfMass);
-        cell.mx = this.mx;
-        cell.my = this.my;
+        cell.vx = this.vx;
+        cell.vy = this.vy;
         cell.targetX = this.targetX;
         cell.targetY = this.targetY;
         cell.group = this.group;

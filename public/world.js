@@ -36,11 +36,12 @@ class GameWorld
         this.entityList = [];
         this.entityTree = new Quadtree(0, 0, width, height, null);
         this.cellList = [];
-        this.friction = 1;
+        this.friction = 2;
         this.cellularFriction = 0.02;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.radiusMultiplier = 6;
+        this.maxSpeedMultiplier = 6;
         this.cellSpreadDivider = 1;
         this.foodGain = 1;
         this.foodRadius = 2;
@@ -152,7 +153,7 @@ class GameWorld
         let checkedPairs = {};
         function getPairChecked(cellA, cellB)
         {
-            return false; //is bad, just do every check
+            //return false; //is bad, just do every check
             function checkPair(str)
             {
                 if(checkedPairs.hasOwnProperty(str))
@@ -200,12 +201,12 @@ class GameWorld
                 let aCell = cell, bCell = otherCell;
                 if(aCell.group == bCell.group)
                 {
-                    let distX = bCell.x - aCell.x;
-                    let distY = bCell.y - aCell.y;
+                    let distX = (bCell.x + bCell.vx) - (aCell.x + aCell.vx);
+                    let distY = (bCell.y + bCell.vy) - (aCell.y + aCell.vy);
                     let distSqr = distX ** 2 + distY ** 2;
-                    if(distSqr < (aCell.radius + bCell.radius) ** 2)
+                    let dist = Math.sqrt(distSqr);
+                    if(dist < aCell.radius + bCell.radius)
                     {
-                        let dist = Math.sqrt(distSqr);
                         if(dist == 0) dist = 1; //prevent div by 0
                         let uX = distX / dist;
                         let uY = distY / dist;
