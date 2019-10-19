@@ -34,7 +34,7 @@ class GameCell
     {
         this.mass = newMass;
         this.radius = Math.sqrt(this.mass / Math.PI) * this.world.radiusMultiplier;
-        this.world.pushEntityUpdate(this, "mass");
+        this.world.pushEntityUpdate(this, "mass", "radius");
     }
     apply(mx, my)
     {
@@ -116,7 +116,7 @@ class GameCell
         for(let j = nearbyFood.length - 1; j >= 0; j--)
         {
             let entity = nearbyFood[j];
-            if(entity.type != "food")
+            if(entity.entityType != "food")
             {
                 nearbyFood.splice(j, 1);
             }

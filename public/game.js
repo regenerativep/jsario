@@ -108,7 +108,6 @@ class Client
     receiveMyCells(ids)
     {
         this.localIds = ids;
-        //console.log(this.localIds);
     }
     //here we have to process the list of json objects and turn them into an actual cell list
     //is this the best way to do this, or should we update the cells in the current list instead of essentially overwriting every time?
@@ -201,7 +200,7 @@ ws.onmessage = function(ev) {
     }
     else if(data.type == "removeEntity")
     {
-        client.removeEntity(id);
+        client.removeEntity(data.id);
     }
 };
 function zaggyLine(x,y,l, wid)
