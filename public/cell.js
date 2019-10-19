@@ -13,22 +13,30 @@ class GameCell
         this.vx = 0;
         this.vy = 0;
         this.id = world.requestEntityId();
+        this.timeToRecombine = 0;
         this.changeMass(32);
         this.targetX = 0;
         this.targetY = 0;
         this.moveAcceleration = 1;
-        this.launchImpulse = 10;
+        this.launchAcceleration = 10;
         this.angle = 0;
-        this.group = [];
+        this.group = [this];
         var thisCell = this;
         this._update = () => { thisCell.update(); };
         this.world.emitter.on("update", this._update);
         this.world.addEntity(this, "id", "x", "y", "mass", "radius");
         this.world.cellList.push(this);
     }
+    addRecombineTime(mass)
+    {
+        this.timeToRecombine += mass * this.world.recombineTimeMultiplier;
+    }
     changeMass(newMass)
     {
+        let oldMass = this.mass * 1;
+        if(isNaN(oldMass)) oldMass = 0;
         this.mass = newMass;
+        this.addRecombineTime(this.mass - oldMass);
         this.radius = Math.sqrt(this.mass / Math.PI) * this.world.radiusMultiplier;
         this.maxSpeed = this.world.maxSpeedMultiplier / Math.pow(this.radius, 0.449);
         this.world.pushEntityUpdate(this, "mass", "radius");
@@ -43,11 +51,9 @@ class GameCell
         this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
         let uX = Math.cos(this.angle);
         let uY = Math.sin(this.angle);
-        let magnitude = this.moveAcceleration;
-        this.apply(uX * magnitude, uY * magnitude);
+        this.apply(uX * this.moveAcceleration, uY * this.moveAcceleration);
         
-        let distSqr = (this.vx ** 2) + (this.vy ** 2);
-        let dist = Math.sqrt(distSqr);
+        let dist = Math.sqrt((this.vx ** 2) + (this.vy ** 2));
         if(dist > this.maxSpeed)
         {
             uX = this.vx / dist;
@@ -102,12 +108,10 @@ class GameCell
                 nearbyFood.splice(j, 1);
             }
         }
-        //let foodRadiusSqr = this.world.foodRadius ** 2;
         for(let j = 0; j < nearbyFood.length; j++)
         {
             let particle = nearbyFood[j];
-            let distSqr = (particle.x - this.x) ** 2 + (particle.y - this.y) ** 2;
-            let foodDist = Math.sqrt(distSqr);
+            let foodDist = Math.sqrt((particle.x - this.x) ** 2 + (particle.y - this.y) ** 2);
             if(foodDist < this.world.foodRadius + this.radius)
             {
                 //eat the food particle
@@ -115,6 +119,7 @@ class GameCell
                 this.changeMass(this.mass + this.world.foodGain);
             }
         }
+        this.timeToRecombine--;
     }
     split()
     {
@@ -122,6 +127,7 @@ class GameCell
         let halfMass = this.mass / 2;
         this.changeMass(halfMass);
         cell.changeMass(halfMass);
+        //cell.addRecombineTime(cell.mass);
         cell.vx = this.vx;
         cell.vy = this.vy;
         cell.targetX = this.targetX;
@@ -136,7 +142,7 @@ class GameCell
         this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
         let uX = Math.cos(this.angle);
         let uY = Math.sin(this.angle);
-        this.apply(uX * this.launchImpulse, uY * this.launchImpulse)
+        this.apply(uX * this.launchAcceleration, uY * this.launchAcceleration)
         this.changePosition(this.x + this.vx, this.y + this.vy);
     }
     changePosition(newX, newY)
@@ -154,6 +160,7 @@ class GameCell
     }
     close()
     {
+        this.group.splice(this.group.indexOf(this), 1);
         this.world.cellList.splice(this.world.cellList.indexOf(this), 1);
         this.world.emitter.removeListener("update", this._update);
     }

@@ -2,11 +2,17 @@ var Server = require("ws").Server;
 var wrldJs = require("./public/world.js");
 var GameWorld = wrldJs.GameWorld, GameCell = wrldJs.GameCell;
 var WebServer = require("./webserver.js")();
+var EventEmitter = require("./public/eventemitter.js");
 
 var webapp, wsServer, gameWorld;
 var gameUpdateInterval, clientUpdateInterval;
 var messageResponses = {};
 
+var userState = {
+    STARTING: 0,
+    PLAYING: 1,
+    DEAD: 2
+};
 class GameUser
 {
     constructor(socket, id)
@@ -14,6 +20,7 @@ class GameUser
         this.socket = socket;
         this.cells = [];
         this.id = id;
+        this.state = userState.STARTING;
     }
     sendCellList()
     {
@@ -153,7 +160,8 @@ function main()
         }
         let cell = new GameCell(gameWorld, 0, 0);
         let user = new GameUser(socket, id);
-        user.cells.push(cell);
+        //user.cells.push(cell);
+        user.cells = cell.group;
         //we need to catch the user up with all of the already existing entities
         let allEntityData = gameWorld.getAllEntityData();
         for(let i = 0; i < allEntityData.length; i++)
@@ -164,6 +172,7 @@ function main()
         }
         user.sendCellList();
         users.push(user);
+        user.state = userState.PLAYING;
         console.log("registered a user");
     };
     messageResponses["input"] = (data, socket, id) => {
@@ -198,7 +207,7 @@ function main()
                     continue;
                 }
                 let newCell = cell.split();
-                user.cells.push(newCell);
+                //user.cells.push(newCell);
                 newCell.launch();
             }
             user.sendCellList();

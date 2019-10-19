@@ -149,6 +149,13 @@ class Client
     removeEntity(id)
     {
         delete this.entityList[id];
+        for(let i = client.localIds.length - 1; i >= 0; i--)
+        {
+            if(id == client.localIds[i])
+            {
+                client.localIds.splice(i, 1);
+            }
+        }
     }
     updateEntities()
     {

@@ -36,12 +36,13 @@ class GameWorld
         this.entityList = [];
         this.entityTree = new Quadtree(0, 0, width, height, null);
         this.cellList = [];
-        this.friction = 2;
+        this.friction = 1.2;
         this.cellularFriction = 0.02;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.radiusMultiplier = 6;
         this.maxSpeedMultiplier = 6;
+        this.recombineTimeMultiplier = 15;
         this.cellSpreadDivider = 1;
         this.foodGain = 1;
         this.foodRadius = 2;
@@ -171,6 +172,7 @@ class GameWorld
             let cellBstr = cellB.id.toString();
             checkedPairs[cellAstr + "-" + cellBstr] = 1;
         }
+        let killedCells = [];
         for(let i = 0; i < this.cellList.length; i++)
         {
             let cell = this.cellList[i];
@@ -192,85 +194,78 @@ class GameWorld
             for(let j = 0; j < nearbyCells.length; j++)
             {
                 let otherCell = nearbyCells[j];
-                if(getPairChecked(cell, otherCell))
+                if(cell == otherCell || getPairChecked(cell, otherCell))
                 {
                     continue;
                 }
-                //let aCell = this.cellList[i];
-                //let bCell = this.cellList[j];
                 let aCell = cell, bCell = otherCell;
-                if(aCell.group == bCell.group)
+                if(aCell.timeToRecombine <= 0 && bCell.timeToRecombine <= 0)
                 {
+                    if(aCell.mass <= 0 || bCell.mass <= 0)
+                    {
+                        continue;
+                    }
                     let distX = (bCell.x + bCell.vx) - (aCell.x + aCell.vx);
                     let distY = (bCell.y + bCell.vy) - (aCell.y + aCell.vy);
-                    let distSqr = distX ** 2 + distY ** 2;
-                    let dist = Math.sqrt(distSqr);
-                    if(dist < aCell.radius + bCell.radius)
+                    let dist = Math.sqrt(distX ** 2 + distY ** 2);
+                    let largestCell, smallCell;
+                    if(aCell.radius > bCell.radius)
                     {
-                        if(dist == 0) dist = 1; //prevent div by 0
-                        let uX = distX / dist;
-                        let uY = distY / dist;
-                        let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
-                        aCell.changePosition(aCell.x - uX * distd2, aCell.y - uY * distd2);
-                        bCell.changePosition(bCell.x + uX * distd2, bCell.y + uY * distd2);
-                        
-                        let dvx = bCell.vx - aCell.vx;
-                        let dvy = bCell.vy - aCell.vy;
-                        //perpendicular
-                        let pX = uY;
-                        let pY = -uX;
-                        let proj = projectVectors(dvx, dvy, pX, pY);
-                        let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
-                        if(mag > this.cellularFriction)
+                        largestCell = aCell;
+                        smallCell = bCell;
+                    }
+                    else
+                    {
+                        largestCell = bCell;
+                        smallCell = aCell;
+                    }
+                    if(dist < largestCell.radius)
+                    {
+                        largestCell.changeMass(largestCell.mass + smallCell.mass);
+                        smallCell.changeMass(0);
+                        killedCells.push(smallCell);
+                    }
+                }
+                else
+                {
+                    if(aCell.group == bCell.group)
+                    {
+                        let distX = (bCell.x + bCell.vx) - (aCell.x + aCell.vx);
+                        let distY = (bCell.y + bCell.vy) - (aCell.y + aCell.vy);
+                        let dist = Math.sqrt(distX ** 2 + distY ** 2);
+                        if(dist < aCell.radius + bCell.radius)
                         {
-                            mag = this.cellularFriction;
+                            if(dist == 0) dist = 1; //prevent div by 0
+                            let uX = distX / dist;
+                            let uY = distY / dist;
+                            let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
+                            aCell.changePosition(aCell.x - uX * distd2, aCell.y - uY * distd2);
+                            bCell.changePosition(bCell.x + uX * distd2, bCell.y + uY * distd2);
+                            /*
+                            let dvx = bCell.vx - aCell.vx;
+                            let dvy = bCell.vy - aCell.vy;
+                            //perpendicular
+                            let pX = uY;
+                            let pY = -uX;
+                            let proj = projectVectors(dvx, dvy, pX, pY);
+                            let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
+                            if(mag > this.cellularFriction)
+                            {
+                                mag = this.cellularFriction;
+                            }
+                            aCell.apply(-pX * mag, -pY * mag);
+                            bCell.apply(pX * mag, pY * mag);*/
                         }
-                        aCell.apply(-pX * mag, -pY * mag);
-                        bCell.apply(pX * mag, pY * mag);
                     }
                 }
                 setPairChecked(cell, otherCell);
             }
         }
-        /*
-        for(let i = 0; i < this.cellList.length; i++)
+        for(let i = 0; i < killedCells.length; i++)
         {
-            for(let j = i + 1; j < this.cellList.length; j++)
-            {
-                let aCell = this.cellList[i];
-                let bCell = this.cellList[j];
-                if(aCell.group == bCell.group)
-                {
-                    let distX = bCell.x - aCell.x;
-                    let distY = bCell.y - aCell.y;
-                    let distSqr = distX ** 2 + distY ** 2;
-                    if(distSqr < (aCell.radius + bCell.radius) ** 2)
-                    {
-                        let dist = Math.sqrt(distSqr);
-                        if(dist == 0) dist = 1; //prevent div by 0
-                        let uX = distX / dist;
-                        let uY = distY / dist;
-                        let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
-                        aCell.changePosition(aCell.x - uX * distd2, aCell.y - uY * distd2);
-                        bCell.changePosition(bCell.x + uX * distd2, bCell.y + uY * distd2);
-                        
-                        let dvx = bCell.vx - aCell.vx;
-                        let dvy = bCell.vy - aCell.vy;
-                        //perpendicular
-                        let pX = uY;
-                        let pY = -uX;
-                        let proj = projectVectors(dvx, dvy, pX, pY);
-                        let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
-                        if(mag > this.cellularFriction)
-                        {
-                            mag = this.cellularFriction;
-                        }
-                        aCell.apply(-pX * mag, -pY * mag);
-                        bCell.apply(pX * mag, pY * mag);
-                    }
-                }
-            }
-        }*/
+            let cell = killedCells[i];
+            this.removeEntity(cell);
+        }
         this.foodToPlace += this.foodAccumulateRate;
         while(this.foodToPlace > 1)
         {
