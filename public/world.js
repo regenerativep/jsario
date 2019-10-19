@@ -44,50 +44,54 @@ class GameWorld
         this.foodToPlace = 0;
         this.lastEntityId = 0;
         this.entityTypes = { //what variables in the entity to keep track of
-            cell: {
-                static: ["type", "id"],
-                dynamic: ["x", "y", "vx", "vy", "mass", "radius"]
-            },
-            food: {
-                static: ["type", "x", "y", "id"],
-                dynamic: []
-            },
-            world: {
-                static: ["type", "width", "height"],
-                dynamic: []
-            }
+            cell: ["type", "id", "x", "y", "vx", "vy", "mass", "radius"],
+            food: ["type", "x", "y", "id"],
+            world: ["type", "width", "height"]
         };
-        this.currentEntityData = [];
-        this.lastEntityData = [];
+        this.queuedEntityData = {};
+        this.queuedEntityDataOrder = [];
     }
-    updateEntityData()
+    pushEntityUpdate(entity)
     {
-        this.lastEntityData = this.currentEntityData;
-        this.currentEntityData = [];
-        let lastEntityCheck = [];
-        lastEntityCheck.push(...this.lastEntityData);
-        let lastCurrentPairs = [];
-        for(let i = 0; i < this.entityList.length; i++)
+        let updateSlot;
+        if(this.queuedEntityData.hasOwnProperty(entity.id))
         {
-            let entity = this.entityList[i];
-            let entityModel = this.entityTypes[entity.type];
-            let entityData = {};
-            for(let j = 0; j < entityModel.dynamic.length; j++)
-            {
-                let property = entityModel.dynamic[j];
-                entityData[property] = entity[property];
-            }
-            this.currentEntityData.push(entityData);
-            for(let j = 0; j < lastEntityCheck.length; j++)
-            {
-                let lastEntity = lastEntityCheck[j];
-                
-            }
+            updateSlot = this.queuedEntityData[entity.id];
+        }
+        else
+        {
+            updateSlot = {};
+            this.queuedEntityData[entity.id] = updateSlot;
+        }
+        for(let i = 1; i < arguments.length; i++)
+        {
+            let property = arguments[i];
+            updateSlot[property] = entity[property];
+        }
+        this.queuedEntityDataOrder.push(entity.id);
+    }
+    dequeueEntityUpdate()
+    {
+        if(this.queuedEntityDataOrder.length == 0) return null;
+        let nextId = this.queuedEntityDataOrder.shift();
+        if(this.queuedEntityData.hasOwnProperty(nextId))
+        {
+            let data = this.queuedEntityData[nextId];
+            delete this.queuedEntityData[nextId];
+            return data;
+        }
+        else
+        {
+            return this.dequeueEntityUpdate();
         }
     }
     requestEntityId() //may want to complicate this later
     {
         return lastEntityId++;
+    }
+    addEntity(entity)
+    {
+        
     }
     findCellFromId(id)
     {

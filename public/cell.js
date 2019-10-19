@@ -32,6 +32,7 @@ class GameCell
     {
         this.mass = newMass;
         this.radius = Math.sqrt(this.mass / Math.PI) * this.world.radiusMultiplier;
+        this.world.pushEntityUpdate(this, "mass");
     }
     apply(mx, my)
     {
@@ -123,6 +124,7 @@ class GameCell
                 this.changeMass(this.mass + this.world.foodGain);
             }
         }
+        this.world.pushEntityUpdate(this, "x", "y");
     }
     split()
     {
