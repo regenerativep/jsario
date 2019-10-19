@@ -1,27 +1,22 @@
 class Cell
 {
-    constructor(x,y,id,vx,vy, r)
+    constructor(x,y,r,mass,id)
     {
         this.x = x;
         this.y = y;
         this.id = id;
-        this.vx = vx;
-        this.vy = vy;
-        this.radius = r
+        this.radius = r;
+        this.mass = mass;
+        this.type = "cell";
     }
-    move() //currently not in use
+    /*move() //currently not in use
     {
         var angle = Math.atan2(mouseY-halfHeight,mouseX-halfWidth);
         this.vx = Math.cos(angle)*Math.min(1,(Math.abs(mouseX-halfWidth)/20));
         this.vy = Math.sin(angle)*Math.min(1,(Math.abs(mouseY-halfHeight)/20));
         this.x += this.vx;
         this.y += this.vy;
-    }
-    split()
-    {
-        let splitCells = [this];
-        return splitCells; //temporary, could return an array with multiple cells if a split occured
-    }
+    }*/
     draw()
     {
         ellipse(this.x, this.y, this.radius * 2, this.radius * 2);
@@ -42,7 +37,7 @@ class Camera
         let cells = [];
         for(let i = 0; i < c.localIds.length; i++)
         {
-            let cell = c.findCellFromId(c.localIds[i]);
+            let cell = c.findEntityFromId(c.localIds[i]);
             if(cell!=null)
             {
                 cells.push(cell);
@@ -86,8 +81,7 @@ class Client
     constructor(camera)
     {
         this.localIds = [];
-        this.cellList = [];
-        this.foodList = [];
+        this.entityList = {};
         this.foodTree = new Quadtree(0, 0, 2048, 2048); //todo: possibly let server tell us room size
         this.webSock = null;
         this.camera = camera;
@@ -96,17 +90,9 @@ class Client
     {
         this.webSock = webSock;
     }
-    findCellFromId(id)
+    findEntityFromId(id)
     {
-        for(let i = 0; i < this.cellList.length; i++)
-        {
-            let cell = this.cellList[i];
-            if(cell.id == id)
-            {
-                return cell;
-            }
-        }
-        return null;
+        return (this.entityList[id]);
     }
     sendInput()
     {
@@ -126,27 +112,44 @@ class Client
     }
     //here we have to process the list of json objects and turn them into an actual cell list
     //is this the best way to do this, or should we update the cells in the current list instead of essentially overwriting every time?
-    receiveCells(cells) 
+    createEntity(e) 
     {
-        this.cellList = [];
-        for(let i = 0; i < cells.length; i++)
+        if(e.entityType=="cell")
         {
-            let c = cells[i];
-            this.cellList.push(new Cell(c.x,c.y,c.id,c.vx,c.vy, c.radius));
+            this.entityList[e.id] = new Cell(e.x,e.y,e.radius,e.mass,e.id);
         }
+        else if(e.entityType=="food")
+        {
+            this.entityList[e.id] = {x: e.x, y: e.y, id: e.id, type: "food"}
+        }
+        
     }
-    updateCells()
+    updateEntity(e)
+    {
+        if(e.entityType=="cell")
+        {
+            this.entityList[e.id] = new Cell(e.x,e.y,e.radius,e.mass,e.id);
+        }
+        else if(e.entityType=="food"){}
+    }
+    removeEntity(id)
+    {
+        delete this.entityList[id];
+    }
+    updateEntities()
     {
         this.sendInput();
-        
-        for(let i = 0; i < this.cellList.length; i++)
+        for(let key in this.entityList)
         {
-            this.cellList[i].draw();
-        }
-        for(let i = 0; i < this.foodList.length; i++) //if we want to optimize the number of foods we are drawing, we may want to bring the quadtree over
-        {
-            let particle = this.foodList[i];
-            ellipse(particle.x, particle.y, foodRadius * 2, foodRadius * 2);
+            let ent = this.entityList[key];
+            if(ent.type=="cell")
+            {
+                ent.draw();
+            }
+            else if(ent.type=="food")
+            {
+                ellipse(ent.x, ent.y, foodRadius * 2, foodRadius * 2);
+            }
         }
     }
 }
@@ -172,32 +175,20 @@ ws.onmessage = function(ev) {
     {
         client.receiveMyCells(data.cellIds);
     }
-    else if(data.type == "allCellUpdate")
+    else if(data.type == "createEntity")
     {
-        client.receiveCells(data.cellList);
+        client.createEntity(data);
     }
-    else if(data.type == "createFood")
+    else if(data.type == "updateEnties")
     {
-        let particle = {
-            x: data.x,
-            y: data.y,
-            id: data.id
-        };
-        client.foodList.push(particle);
-        client.foodTree.addItem(particle);
-    }
-    else if(data.type == "removeFood")
-    {
-        for(let i = 0; i < client.foodList.length; i++)
+        for(let i = 0; i < data.entities.length; i++)
         {
-            let particle = client.foodList[i];
-            if(particle.id == data.id)
-            {
-                client.foodTree.removeItem(particle);
-                client.foodList.splice(i, 1);
-                break;
-            }
+            client.updateEntity(data.entities[i]);
         }
+    }
+    else if(data.type == "deleteEntity")
+    {
+        client.removeEntity(id);
     }
 };
 function zaggyLine(x,y,l, wid)

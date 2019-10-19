@@ -1,4 +1,3 @@
-
 class Quadtree
 {
     constructor(x, y, width, height, parent)
