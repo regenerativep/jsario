@@ -180,6 +180,10 @@ ws.onopen = function() {
     connected = true;
     client.setSocket(ws);
 };
+ws.onclose = function() {
+    console.log("disconnected");
+    connected = false;
+}
 ws.onmessage = function(ev) {
     let data = JSON.parse(ev.data);
     if (data.type == "youare")
