@@ -32,6 +32,7 @@ class GameWorld
         this.height = height;
         this.entityList = [];
         this.entityTree = new Quadtree(0, 0, width, height, null);
+        this.cellList = [];
         this.friction = 1;
         this.cellularFriction = 0.02;
         this.maxSplitCount = 16;
@@ -51,7 +52,7 @@ class GameWorld
         this.queuedEntityData = {};
         this.queuedEntityDataOrder = [];
     }
-    pushEntityUpdate(entity)
+    pushEntityUpdate(entity, ...properties)
     {
         let updateSlot;
         if(this.queuedEntityData.hasOwnProperty(entity.id))
@@ -63,9 +64,13 @@ class GameWorld
             updateSlot = {};
             this.queuedEntityData[entity.id] = updateSlot;
         }
-        for(let i = 1; i < arguments.length; i++)
+        if(properties.indexOf("id") < 0)
         {
-            let property = arguments[i];
+            properties.push("id");
+        }
+        for(let i = 1; i < properties.length; i++)
+        {
+            let property = properties[i];
             updateSlot[property] = entity[property];
         }
         this.queuedEntityDataOrder.push(entity.id);
@@ -87,34 +92,33 @@ class GameWorld
     }
     requestEntityId() //may want to complicate this later
     {
-        return lastEntityId++;
+        return this.lastEntityId++;
     }
-    addEntity(entity)
+    addEntity(entity, ...properties)
     {
-        
+        this.entityTree.addItem(entity);
+        this.emitter.emit("createEntity", entity, ...properties);
     }
-    findCellFromId(id)
+    removeEntity(entity)
     {
-        for(let i = 0; i < this.cellList.length; i++)
+        this.entityTree.removeItem(entity);
+        this.emitter.emit("removeEntity", entity);
+        if(typeof entity.close === "function")
         {
-            let cell = this.cellList[i];
-            if(cell.id == id)
+            entity.close();
+        }
+    }
+    findEntityFromId(id)
+    {
+        for(let i = 0; i < this.entityList.length; i++)
+        {
+            let entity = this.entityList[i];
+            if(entity.id == id)
             {
-                return cell;
+                return entity;
             }
         }
         return null;
-    }
-    createFood(x, y)
-    {
-        let particle = {
-            type: "cell",
-            x: x,
-            y: y,
-            id: lastFoodId++
-        };
-        this.foodTree.addItem(particle);
-        this.emitter.emit("createFood", particle);
     }
     update()
     {
@@ -162,7 +166,12 @@ class GameWorld
         {
             let x = Math.random() * this.width;
             let y = Math.random() * this.height;
-            this.createFood(x, y);
+            this.addEntity({
+                entityType: "food",
+                x: x,
+                y: y,
+                id: this.requestEntityId()
+            }, "id", "x", "y");
             this.foodToPlace--;
         }
         this.emitter.emit("update");

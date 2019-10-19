@@ -7,7 +7,7 @@ class GameCell
     constructor(world, x, y)
     {
         this.world = world;
-        this.type = "cell";
+        this.entityType = "cell";
         this.x = x;
         this.y = y;
         this.vx = 0;
@@ -25,8 +25,10 @@ class GameCell
         this.angle = 0;
         this.group = [];
         var thisCell = this;
-        this.world.emitter.on("update", () => { thisCell.update(); }); //todo: remove this listener on destroy
-        this.world.emitter.emit("createCell", this);
+        this._update = () => { thisCell.update(); };
+        this.world.emitter.on("update", this._update);
+        this.world.addEntity(this, "id", "x", "y", "mass", "radius");
+        this.world.cellList.push(this);
     }
     changeMass(newMass)
     {
@@ -108,9 +110,18 @@ class GameCell
         let cy1 = this.y - this.radius;
         let cx2 = this.x + this.radius;
         let cy2 = this.y + this.radius;
-        let nearbyFood = this.world.foodTree.getItemsIn((rx, ry, rw, rh) => {
+        let nearbyFood = this.world.entityTree.getItemsIn((rx, ry, rw, rh) => {
             return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
         });
+        //get rid of anything that isnt food
+        for(let j = nearbyFood.length - 1; j >= 0; j--)
+        {
+            let entity = nearbyFood[j];
+            if(entity.type != "food")
+            {
+                nearbyFood.splice(j, 1);
+            }
+        }
         let foodRadiusSqr = this.world.foodRadius ** 2;
         for(let j = 0; j < nearbyFood.length; j++)
         {
@@ -119,8 +130,7 @@ class GameCell
             if(distSqr < foodRadiusSqr + this.radius ** 2)
             {
                 //eat the food particle
-                this.world.foodTree.removeItem(particle);
-                this.world.emitter.emit("removeFood", particle);
+                this.world.removeEntity(particle);
                 this.changeMass(this.mass + this.world.foodGain);
             }
         }
@@ -149,6 +159,11 @@ class GameCell
         this.apply(uX * this.launchImpulse, uY * this.launchImpulse)
         this.x += this.mx;
         this.y += this.my;
+    }
+    close()
+    {
+        this.world.cellList.splice(this.world.cellList.indexOf(this), 1);
+        this.world.emitter.removeListener("update", this._update);
     }
 }
 try
