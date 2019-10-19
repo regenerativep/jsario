@@ -1,6 +1,7 @@
 var express = require("express");
 module.exports = function() {
     let webapp = module.exports.webapp;
+    webapp = express();
     webapp.on("error", (parent) => {
         console.log("something went wrong when running web server");
     });

@@ -34,6 +34,20 @@ class EventEmitter
             listener(...args);
         }
     }
+    removeListener(name, action)
+    {
+        if(this.events.hasOwnProperty(name))
+        {
+            let actionList = this.events[name];
+            for(let i = 0; i < actionList.length; i++)
+            {
+                if(actionList[i] == action)
+                {
+                    return actionList.splice(i, 1);
+                }
+            }
+        }
+    }
 }
 try
 {

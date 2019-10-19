@@ -32,6 +32,7 @@ class GameWorld
         this.height = height;
         this.entityList = [];
         this.entityTree = new Quadtree(0, 0, width, height, null);
+        this.cellList = [];
         this.friction = 1;
         this.cellularFriction = 0.02;
         this.maxSplitCount = 16;
@@ -51,7 +52,7 @@ class GameWorld
         this.queuedEntityData = {};
         this.queuedEntityDataOrder = [];
     }
-    pushEntityUpdate(entity)
+    pushEntityUpdate(entity, ...properties)
     {
         let updateSlot;
         if(this.queuedEntityData.hasOwnProperty(entity.id))
@@ -63,9 +64,13 @@ class GameWorld
             updateSlot = {};
             this.queuedEntityData[entity.id] = updateSlot;
         }
-        for(let i = 1; i < arguments.length; i++)
+        if(properties.indexOf("id") < 0)
         {
-            let property = arguments[i];
+            properties.push("id");
+        }
+        for(let i = 1; i < properties.length; i++)
+        {
+            let property = properties[i];
             updateSlot[property] = entity[property];
         }
         this.queuedEntityDataOrder.push(entity.id);
@@ -87,74 +92,77 @@ class GameWorld
     }
     requestEntityId() //may want to complicate this later
     {
-        return lastEntityId++;
+        return this.lastEntityId++;
     }
-    addEntity(entity)
+    addEntity(entity, ...properties)
     {
-        
+        this.entityTree.addItem(entity);
+        this.emitter.emit("createEntity", entity, ...properties);
     }
-    findCellFromId(id)
+    removeEntity(entity)
     {
-        for(let i = 0; i < this.cellList.length; i++)
+        this.entityTree.removeItem(entity);
+        this.emitter.emit("removeEntity", entity);
+        if(typeof entity.close === "function")
         {
-            let cell = this.cellList[i];
-            if(cell.id == id)
+            entity.close();
+        }
+    }
+    findEntityFromId(id)
+    {
+        for(let i = 0; i < this.entityList.length; i++)
+        {
+            let entity = this.entityList[i];
+            if(entity.id == id)
             {
-                return cell;
+                return entity;
             }
         }
         return null;
     }
-    createFood(x, y)
-    {
-        let particle = {
-            type: "cell",
-            x: x,
-            y: y,
-            id: lastFoodId++
-        };
-        this.foodTree.addItem(particle);
-        this.emitter.emit("createFood", particle);
-    }
     update()
     {
+        function collideCells(aCell, bCell)
+        {
+            if(aCell.group == bCell.group)
+            {
+                let distX = bCell.x - aCell.x;
+                let distY = bCell.y - aCell.y;
+                let distSqr = distX ** 2 + distY ** 2;
+                if(distSqr < (aCell.radius + bCell.radius) ** 2)
+                {
+                    let dist = Math.sqrt(distSqr);
+                    let uX = distX / dist;
+                    let uY = distY / dist;
+                    let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
+                    aCell.x -= uX * distd2;
+                    aCell.y -= uY * distd2;
+                    bCell.x += uX * distd2;
+                    bCell.y += uY * distd2;
+                    
+                    let dvx = bCell.vx - aCell.vx;
+                    let dvy = bCell.vy - aCell.vy;
+                    //perpendicular
+                    let pX = uY;
+                    let pY = -uX;
+                    let proj = projectVectors(dvx, dvy, pX, pY);
+                    let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
+                    if(mag > this.cellularFriction)
+                    {
+                        mag = this.cellularFriction;
+                    }
+                    aCell.apply(-pX * mag, -pY * mag);
+                    bCell.apply(pX * mag, pY * mag);
+                }
+            }
+        }
         for(let i = 0; i < this.cellList.length; i++)
         {
             for(let j = i + 1; j < this.cellList.length; j++)
             {
                 let aCell = this.cellList[i];
                 let bCell = this.cellList[j];
-                if(aCell.group == bCell.group)
-                {
-                    let distX = bCell.x - aCell.x;
-                    let distY = bCell.y - aCell.y;
-                    let distSqr = distX ** 2 + distY ** 2;
-                    if(distSqr < (aCell.radius + bCell.radius) ** 2)
-                    {
-                        let dist = Math.sqrt(distSqr);
-                        let uX = distX / dist;
-                        let uY = distY / dist;
-                        let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
-                        aCell.x -= uX * distd2;
-                        aCell.y -= uY * distd2;
-                        bCell.x += uX * distd2;
-                        bCell.y += uY * distd2;
-                        
-                        let dvx = bCell.vx - aCell.vx;
-                        let dvy = bCell.vy - aCell.vy;
-                        //perpendicular
-                        let pX = uY;
-                        let pY = -uX;
-                        let proj = projectVectors(dvx, dvy, pX, pY);
-                        let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
-                        if(mag > this.cellularFriction)
-                        {
-                            mag = this.cellularFriction;
-                        }
-                        aCell.apply(-pX * mag, -pY * mag);
-                        bCell.apply(pX * mag, pY * mag);
-                    }
-                }
+                collideCells(aCell, bCell);
             }
         }
         this.foodToPlace += this.foodAccumulateRate;
@@ -162,7 +170,12 @@ class GameWorld
         {
             let x = Math.random() * this.width;
             let y = Math.random() * this.height;
-            this.createFood(x, y);
+            this.addEntity({
+                entityType: "food",
+                x: x,
+                y: y,
+                id: this.requestEntityId()
+            }, "id", "x", "y");
             this.foodToPlace--;
         }
         this.emitter.emit("update");
