@@ -17,7 +17,10 @@ catch(e)
 {
     //
 }
-
+function rectangleInRectangle(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2)
+{
+    return ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1;
+}
 function projectVectors(ax, ay, bx, by)
 {
     let val = ((ax * bx) + (ay * by));// / (bx ** 2 + by ** 2)); //for what we are using it for, b is a unit vector
@@ -140,6 +143,89 @@ class GameWorld
     }
     update()
     {
+        let checkedPairs = {};
+        function getPairChecked(cellA, cellB)
+        {
+            return false; //is bad, just do every check
+            function checkPair(str)
+            {
+                if(checkedPairs.hasOwnProperty(str))
+                {
+                    return true;
+                }
+            }
+            let cellAstr = cellA.id.toString();
+            let cellBstr = cellB.id.toString();
+            return checkPair(cellAstr + "-" + cellBstr) || checkPair(cellBstr + "-" + cellAstr);
+        }
+        function setPairChecked(cellA, cellB)
+        { 
+            let cellAstr = cellA.id.toString();
+            let cellBstr = cellB.id.toString();
+            checkedPairs[cellAstr + "-" + cellBstr] = 1;
+        }
+        for(let i = 0; i < this.cellList.length; i++)
+        {
+            let cell = this.cellList[i];
+            let cx1 = cell.x - cell.radius;
+            let cy1 = cell.y - cell.radius;
+            let cx2 = cell.x + cell.radius;
+            let cy2 = cell.y + cell.radius;
+            let nearbyCells = this.entityTree.getItemsIn((rx, ry, rw, rh) => {
+                return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
+            });
+            for(let j = nearbyCells.length - 1; j >= 0; j--)
+            {
+                let entity = nearbyCells[j];
+                if(entity.entityType != "cell")
+                {
+                    nearbyCells.splice(j, 1);
+                }
+            }
+            for(let j = 0; j < nearbyCells.length; j++)
+            {
+                let otherCell = nearbyCells[j];
+                if(getPairChecked(cell, otherCell))
+                {
+                    continue;
+                }
+                //let aCell = this.cellList[i];
+                //let bCell = this.cellList[j];
+                let aCell = cell, bCell = otherCell;
+                if(aCell.group == bCell.group)
+                {
+                    let distX = bCell.x - aCell.x;
+                    let distY = bCell.y - aCell.y;
+                    let distSqr = distX ** 2 + distY ** 2;
+                    if(distSqr < (aCell.radius + bCell.radius) ** 2)
+                    {
+                        let dist = Math.sqrt(distSqr);
+                        if(dist == 0) dist = 1; //prevent div by 0
+                        let uX = distX / dist;
+                        let uY = distY / dist;
+                        let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
+                        aCell.changePosition(aCell.x - uX * distd2, aCell.y - uY * distd2);
+                        bCell.changePosition(bCell.x + uX * distd2, bCell.y + uY * distd2);
+                        
+                        let dvx = bCell.vx - aCell.vx;
+                        let dvy = bCell.vy - aCell.vy;
+                        //perpendicular
+                        let pX = uY;
+                        let pY = -uX;
+                        let proj = projectVectors(dvx, dvy, pX, pY);
+                        let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
+                        if(mag > this.cellularFriction)
+                        {
+                            mag = this.cellularFriction;
+                        }
+                        aCell.apply(-pX * mag, -pY * mag);
+                        bCell.apply(pX * mag, pY * mag);
+                    }
+                }
+                setPairChecked(cell, otherCell);
+            }
+        }
+        /*
         for(let i = 0; i < this.cellList.length; i++)
         {
             for(let j = i + 1; j < this.cellList.length; j++)
@@ -177,7 +263,7 @@ class GameWorld
                     }
                 }
             }
-        }
+        }*/
         this.foodToPlace += this.foodAccumulateRate;
         while(this.foodToPlace > 1)
         {
