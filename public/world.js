@@ -173,13 +173,15 @@ class GameWorld
             checkedPairs[cellAstr + "-" + cellBstr] = 1;
         }
         let killedCells = [];
+        this.cellList = this.cellList.sort((a, b) => { return b.mass - a.mass; }); //descending
         for(let i = 0; i < this.cellList.length; i++)
         {
             let cell = this.cellList[i];
-            let cx1 = cell.x - cell.radius;
-            let cy1 = cell.y - cell.radius;
-            let cx2 = cell.x + cell.radius;
-            let cy2 = cell.y + cell.radius;
+            let checkRadius = cell.radius * 2;
+            let cx1 = cell.x - checkRadius;
+            let cy1 = cell.y - checkRadius;
+            let cx2 = cell.x + checkRadius;
+            let cy2 = cell.y + checkRadius;
             let nearbyCells = this.entityTree.getItemsIn((rx, ry, rw, rh) => {
                 return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
             });
