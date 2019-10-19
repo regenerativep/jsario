@@ -3,10 +3,6 @@ var wrldJs = require("./public/world.js");
 var GameWorld = wrldJs.GameWorld, GameCell = wrldJs.GameCell;
 var WebServer = require("./webserver.js")();
 
-// import { GameWorld, GameCell } from "./public/world.js";
-// import { Server } from "ws";
-// import express from "express";
-
 var webapp, wsServer, gameWorld;
 var gameUpdateInterval, clientUpdateInterval;
 var messageResponses = {};
@@ -37,6 +33,7 @@ class GameUser
         {
             let cell = this.cells[i];
             gameWorld.cellList.splice(gameWorld.cellList.indexOf(cell), 1);
+            gameWorld.removeEntity(cell);
         }
     }
 }

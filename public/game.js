@@ -280,7 +280,6 @@ function draw()
         hexTile(cam);
         client.updateEntities();
     }
-    rect(64,64,64,64);
 
     lastSpacePressed = spacePressed;
 }

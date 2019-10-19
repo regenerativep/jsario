@@ -47,6 +47,7 @@ class GameWorld
         this.foodAccumulateRate = 0.5;
         this.foodToPlace = 0;
         this.lastEntityId = 0;
+        this.freeIds = [];
         this.entityTypes = { //what variables in the entity to keep track of //todo: centralize this
             cell: ["entityType", "id", "x", "y", "mass", "radius"],
             food: ["entityType", "id", "x", "y"]
@@ -109,8 +110,12 @@ class GameWorld
         }
         return allData;
     }
-    requestEntityId() //may want to complicate this later
+    requestEntityId()
     {
+        if(this.freeIds.length > 0)
+        {
+            return this.freeIds.splice(0, 1)[0];
+        }
         return this.lastEntityId++;
     }
     addEntity(entity, ...properties)
@@ -123,6 +128,7 @@ class GameWorld
     {
         this.entityList.splice(this.entityList.indexOf(entity), 1);
         this.entityTree.removeItem(entity);
+        this.freeIds.push(entity.id);
         this.emitter.emit("removeEntity", entity);
         if(typeof entity.close === "function")
         {
