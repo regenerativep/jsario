@@ -1,3 +1,4 @@
+//this is a quadtree
 class Quadtree
 {
     constructor(x, y, width, height, parent)
@@ -70,6 +71,34 @@ class Quadtree
         }
         return [];
     }
+    attemptCollapse()
+    {
+        let heldItems = 0;
+        let item = null;
+        if(this.children != null)
+        {
+            for(let i = 0; i < this.children.length; i++)
+            {
+                if(this.children[i].item != null)
+                {
+                    heldItems += 1;
+                    item = this.children[i].item;
+                }
+                if(this.children[i].children != null)
+                {
+                    heldItems += 2;
+                }
+            }
+        }
+        if(heldItems<2)
+        {
+            this.children = null;
+            if(heldItems == 1)
+            {
+                this.item = item;
+            }
+        }
+    }
     removeItem(item)
     {
         if(this.item == null)
@@ -98,6 +127,42 @@ class Quadtree
         else
         {
             this.item = null;
+            this.parent.attemptCollapse(); //if code breaks could be a bad implementation here by me, Nate
+        }
+    }
+    moveItem(item,prevX,prevY)
+    {
+        if(this.item == null)
+        {
+            if(this.children != null)
+            {
+                let child = 0;
+                if(prevX > this.widd2)
+                {
+                    if(prevY > this.hgtd2)
+                    {
+                        child = 3;
+                    }
+                    else
+                    {
+                        child = 1;
+                    }
+                }
+                else if(prevY > this.hgtd2)
+                {
+                    child = 2;
+                }
+                this.children[child].moveItem(item,prevX,prevY);
+            }
+        }
+        else
+        {
+            this.item = null;
+            this.parent.attemptCollapse(); //if code breaks could be a bad implementation here by me, Nate
+        }
+        if(this.depth==0)
+        {
+            this.addItem(item);
         }
     }
     split()
