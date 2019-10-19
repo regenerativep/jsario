@@ -44,10 +44,9 @@ class GameWorld
         this.foodAccumulateRate = 0.5;
         this.foodToPlace = 0;
         this.lastEntityId = 0;
-        this.entityTypes = { //what variables in the entity to keep track of
-            cell: ["type", "id", "x", "y", "vx", "vy", "mass", "radius"],
-            food: ["type", "x", "y", "id"],
-            world: ["type", "width", "height"]
+        this.entityTypes = { //what variables in the entity to keep track of //todo: centralize this
+            cell: ["entityType", "id", "x", "y", "mass", "radius"],
+            food: ["entityType", "id", "x", "y"]
         };
         this.queuedEntityData = {};
         this.queuedEntityDataOrder = [];
@@ -68,7 +67,7 @@ class GameWorld
         {
             properties.push("id");
         }
-        for(let i = 1; i < properties.length; i++)
+        for(let i = 0; i < properties.length; i++)
         {
             let property = properties[i];
             updateSlot[property] = entity[property];
@@ -90,17 +89,36 @@ class GameWorld
             return this.dequeueEntityUpdate();
         }
     }
+    getAllEntityData()
+    {
+        let allData = [];
+        for(let i = 0; i < this.entityList.length; i++)
+        {
+            let entityData = {};
+            let entity = this.entityList[i];
+            let propertyList = this.entityTypes[entity.entityType];
+            for(let j = 0; j < propertyList.length; j++)
+            {
+                let property = propertyList[j];
+                entityData[property] = entity[property];
+            }
+            allData.push(entityData);
+        }
+        return allData;
+    }
     requestEntityId() //may want to complicate this later
     {
         return this.lastEntityId++;
     }
     addEntity(entity, ...properties)
     {
+        this.entityList.push(entity);
         this.entityTree.addItem(entity);
         this.emitter.emit("createEntity", entity, ...properties);
     }
     removeEntity(entity)
     {
+        this.entityList.splice(this.entityList.indexOf(entity), 1);
         this.entityTree.removeItem(entity);
         this.emitter.emit("removeEntity", entity);
         if(typeof entity.close === "function")
@@ -122,47 +140,43 @@ class GameWorld
     }
     update()
     {
-        function collideCells(aCell, bCell)
-        {
-            if(aCell.group == bCell.group)
-            {
-                let distX = bCell.x - aCell.x;
-                let distY = bCell.y - aCell.y;
-                let distSqr = distX ** 2 + distY ** 2;
-                if(distSqr < (aCell.radius + bCell.radius) ** 2)
-                {
-                    let dist = Math.sqrt(distSqr);
-                    let uX = distX / dist;
-                    let uY = distY / dist;
-                    let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
-                    aCell.x -= uX * distd2;
-                    aCell.y -= uY * distd2;
-                    bCell.x += uX * distd2;
-                    bCell.y += uY * distd2;
-                    
-                    let dvx = bCell.vx - aCell.vx;
-                    let dvy = bCell.vy - aCell.vy;
-                    //perpendicular
-                    let pX = uY;
-                    let pY = -uX;
-                    let proj = projectVectors(dvx, dvy, pX, pY);
-                    let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
-                    if(mag > this.cellularFriction)
-                    {
-                        mag = this.cellularFriction;
-                    }
-                    aCell.apply(-pX * mag, -pY * mag);
-                    bCell.apply(pX * mag, pY * mag);
-                }
-            }
-        }
         for(let i = 0; i < this.cellList.length; i++)
         {
             for(let j = i + 1; j < this.cellList.length; j++)
             {
                 let aCell = this.cellList[i];
                 let bCell = this.cellList[j];
-                collideCells(aCell, bCell);
+                if(aCell.group == bCell.group)
+                {
+                    let distX = bCell.x - aCell.x;
+                    let distY = bCell.y - aCell.y;
+                    let distSqr = distX ** 2 + distY ** 2;
+                    if(distSqr < (aCell.radius + bCell.radius) ** 2)
+                    {
+                        let dist = Math.sqrt(distSqr);
+                        let uX = distX / dist;
+                        let uY = distY / dist;
+                        let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
+                        aCell.x -= uX * distd2;
+                        aCell.y -= uY * distd2;
+                        bCell.x += uX * distd2;
+                        bCell.y += uY * distd2;
+                        
+                        let dvx = bCell.vx - aCell.vx;
+                        let dvy = bCell.vy - aCell.vy;
+                        //perpendicular
+                        let pX = uY;
+                        let pY = -uX;
+                        let proj = projectVectors(dvx, dvy, pX, pY);
+                        let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
+                        if(mag > this.cellularFriction)
+                        {
+                            mag = this.cellularFriction;
+                        }
+                        aCell.apply(-pX * mag, -pY * mag);
+                        bCell.apply(pX * mag, pY * mag);
+                    }
+                }
             }
         }
         this.foodToPlace += this.foodAccumulateRate;

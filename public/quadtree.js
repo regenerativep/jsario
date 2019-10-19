@@ -27,6 +27,10 @@ class Quadtree
     {
         if(this.item != null)
         {
+            if(this.item.x == item.x && this.item.y == item.y)
+            {
+                return;
+            }
             this.split();
         }
         if(this.children != null)

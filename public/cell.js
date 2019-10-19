@@ -83,8 +83,7 @@ class GameCell
         }
         this.vx = this.mx / this.mass;
         this.vy = this.my / this.mass;
-        this.x += this.vx;
-        this.y += this.vy;
+        this.changePosition(this.x + this.vx, this.y + this.vy);
         if(this.x < 0)
         {
             this.x = 0;
@@ -134,7 +133,6 @@ class GameCell
                 this.changeMass(this.mass + this.world.foodGain);
             }
         }
-        this.world.pushEntityUpdate(this, "x", "y");
     }
     split()
     {
@@ -157,8 +155,15 @@ class GameCell
         let uX = Math.cos(this.angle);
         let uY = Math.sin(this.angle);
         this.apply(uX * this.launchImpulse, uY * this.launchImpulse)
-        this.x += this.mx;
-        this.y += this.my;
+        this.changePosition(this.x + this.vx, this.y + this.vy);
+    }
+    changePosition(newX, newY)
+    {
+        let prevX = this.x, prevY = this.y;
+        this.x = newX;
+        this.y = newY;
+        this.world.entityTree.moveItem(this, prevX, prevY);
+        this.world.pushEntityUpdate(this, "x", "y");
     }
     close()
     {

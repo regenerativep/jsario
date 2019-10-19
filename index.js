@@ -157,6 +157,14 @@ function main()
         let cell = new GameCell(gameWorld, 0, 0);
         let user = new GameUser(socket, id);
         user.cells.push(cell);
+        //we need to catch the user up with all of the already existing entities
+        let allEntityData = gameWorld.getAllEntityData();
+        for(let i = 0; i < allEntityData.length; i++)
+        {
+            let entityData = allEntityData[i];
+            entityData["type"] = "createEntity";
+            socket.send(JSON.stringify(entityData));
+        }
         user.sendCellList();
         users.push(user);
         console.log("registered a user");

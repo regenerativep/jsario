@@ -126,11 +126,23 @@ class Client
     }
     updateEntity(e)
     {
-        if(e.entityType=="cell")
+        /*
+        if(!this.entityList.hasOwnProperty(e.id))
         {
-            this.entityList[e.id] = new Cell(e.x,e.y,e.radius,e.mass,e.id);
+            if(e.entityType=="cell")
+            {
+                this.entityList[e.id] = new Cell(e.x,e.y,e.radius,e.mass,e.id);
+            }
+            else if(e.entityType=="food"){}
+        }*/
+        if(this.entityList.hasOwnProperty(e.id))
+        {
+            let entity = this.entityList[e.id];
+            for(let key in e)
+            {
+                entity[key] = e[key];
+            }
         }
-        else if(e.entityType=="food"){}
     }
     removeEntity(id)
     {
@@ -179,14 +191,15 @@ ws.onmessage = function(ev) {
     {
         client.createEntity(data);
     }
-    else if(data.type == "updateEnties")
+    else if(data.type == "updateEntities")
     {
         for(let i = 0; i < data.entities.length; i++)
         {
-            client.updateEntity(data.entities[i]);
+            let entityData = data.entities[i];
+            client.updateEntity(entityData);
         }
     }
-    else if(data.type == "deleteEntity")
+    else if(data.type == "removeEntity")
     {
         client.removeEntity(id);
     }
@@ -261,7 +274,7 @@ function draw()
     {
         cam.track(client);
         hexTile(cam);
-        client.updateCells();
+        client.updateEntities();
     }
     rect(64,64,64,64);
 
