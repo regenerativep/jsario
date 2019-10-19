@@ -97,11 +97,13 @@ class Client
     sendInput()
     {
         let doSplit = spacePressed && !lastSpacePressed;
+        let doShoot = wPressed && !lastWPressed;
         this.webSock.send(JSON.stringify({
             type: "input",
             x: this.camera.camX + mouseX,
             y: this.camera.camY + mouseY,
-            split: doSplit
+            split: doSplit,
+            shoot: doShoot
         }));
         
     }
@@ -172,6 +174,7 @@ var client = new Client(cam);
 var connected = false;
 var ws = new WebSocket("ws://127.0.0.1:5524");
 var spacePressed, lastSpacePressed;
+var wPressed, lastWPressed;
 var foodRadius = 4;
 ws.onopen = function() {
     console.log("connected");
@@ -282,6 +285,7 @@ function draw()
     }
 
     lastSpacePressed = spacePressed;
+    lastWPressed = wPressed;
 }
 function keyPressed()
 {
@@ -289,11 +293,19 @@ function keyPressed()
     {
         spacePressed = true;
     }
+    if(key == 'w')
+    {
+        wPressed = true;
+    }
 }
 function keyReleased()
 {
     if(key == ' ')
     {
         spacePressed = false;
+    }
+    if(key == 'w')
+    {
+        wPressed = false;
     }
 }
