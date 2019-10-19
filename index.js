@@ -176,6 +176,7 @@ function main()
         let targetX = readProp(data["x"], 0);
         let targetY = readProp(data["y"], 0);
         let doSplit = readProp(data["split"], false);
+        let doShoot = readProp(data["shoot"], false);
         for(let i = 0; i < user.cells.length; i++)
         {
             let cell = user.cells[i];
@@ -201,6 +202,17 @@ function main()
                 newCell.launch();
             }
             user.sendCellList();
+        }
+        if(doShoot)
+        {
+            for(let i = user.cells.length - 1; i >= 0; i--)
+            {
+                let cell = user.cells[i];
+                if(cell.mass > gameWorld.minShootSize)
+                {
+                    //add shot mass to worlds entities
+                }
+            }
         }
     };
     wsServer = new Server({
