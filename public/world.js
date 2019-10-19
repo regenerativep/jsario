@@ -154,13 +154,12 @@ class GameWorld
                     if(distSqr < (aCell.radius + bCell.radius) ** 2)
                     {
                         let dist = Math.sqrt(distSqr);
+                        if(dist == 0) dist = 1; //prevent div by 0
                         let uX = distX / dist;
                         let uY = distY / dist;
                         let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
-                        aCell.x -= uX * distd2;
-                        aCell.y -= uY * distd2;
-                        bCell.x += uX * distd2;
-                        bCell.y += uY * distd2;
+                        aCell.changePosition(aCell.x - uX * distd2, aCell.y - uY * distd2);
+                        bCell.changePosition(bCell.x + uX * distd2, bCell.y + uY * distd2);
                         
                         let dvx = bCell.vx - aCell.vx;
                         let dvy = bCell.vy - aCell.vy;

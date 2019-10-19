@@ -136,6 +136,7 @@ class Client
         }*/
         if(this.entityList.hasOwnProperty(e.id))
         {
+            //console.log(e);
             let entity = this.entityList[e.id];
             for(let key in e)
             {

@@ -83,27 +83,29 @@ class GameCell
         }
         this.vx = this.mx / this.mass;
         this.vy = this.my / this.mass;
-        this.changePosition(this.x + this.vx, this.y + this.vy);
-        if(this.x < 0)
+        let newX = this.x + this.vx;
+        let newY = this.y + this.vy;
+        if(newX < 0)
         {
-            this.x = 0;
+            newX = 0;
             this.mx = 0;
         }
-        if(this.y < 0)
+        if(newY < 0)
         {
-            this.y = 0;
+            newY = 0;
             this.my = 0;
         }
-        if(this.x > this.world.width)
+        if(newX > this.world.width)
         {
-            this.x = this.world.width;
+            newX = this.world.width;
             this.mx = 0;
         }
-        if(this.y > this.world.height)
+        if(newY > this.world.height)
         {
-            this.y = this.world.height;
+            newY = this.world.height;
             this.my = 0;
         }
+        this.changePosition(newX, newY);
         
         let cx1 = this.x - this.radius;
         let cy1 = this.y - this.radius;
@@ -159,6 +161,11 @@ class GameCell
     }
     changePosition(newX, newY)
     {
+        if(isNaN(newX) && !isNaN(this.x))
+        {
+            debugger;
+        }
+        
         let prevX = this.x, prevY = this.y;
         this.x = newX;
         this.y = newY;
