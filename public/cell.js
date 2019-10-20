@@ -27,6 +27,11 @@ class GameCell
         this.world.addEntity(this, "id", "x", "y", "mass", "radius");
         this.world.cellList.push(this);
     }
+    setRecombineTime(mass)
+    {
+        this.timeToRecombine = 0;
+        this.addRecombineTime(mass);
+    }
     addRecombineTime(mass)
     {
         this.timeToRecombine += mass * this.world.recombineTimeMultiplier;
@@ -36,7 +41,7 @@ class GameCell
         let oldMass = this.mass * 1;
         if(isNaN(oldMass)) oldMass = 0;
         this.mass = newMass;
-        this.addRecombineTime(this.mass - oldMass);
+        //this.addRecombineTime(this.mass - oldMass);
         this.radius = Math.sqrt(this.mass / Math.PI) * this.world.radiusMultiplier;
         this.maxSpeed = this.world.maxSpeedMultiplier / Math.pow(this.radius, 0.449);
         this.world.pushEntityUpdate(this, "mass", "radius");
@@ -127,13 +132,13 @@ class GameCell
         let halfMass = this.mass / 2;
         this.changeMass(halfMass);
         cell.changeMass(halfMass);
+        cell.setRecombineTime(cell.mass);
         //cell.addRecombineTime(cell.mass);
         cell.vx = this.vx;
         cell.vy = this.vy;
         cell.targetX = this.targetX;
         cell.targetY = this.targetY;
         cell.group = this.group;
-        this.world.cellList.push(cell);
         this.group.push(cell);
         return cell;
     }
@@ -160,8 +165,20 @@ class GameCell
     }
     close()
     {
-        this.group.splice(this.group.indexOf(this), 1);
-        this.world.cellList.splice(this.world.cellList.indexOf(this), 1);
+        for(let i = this.group.length - 1; i >= 0; i--)
+        {
+            if(this.group[i].id == this.id)
+            {
+                this.group.splice(i, 1);
+            }
+        }
+        for(let i = this.world.cellList.length - 1; i >= 0; i--)
+        {
+            if(this.world.cellList[i].id == this.id)
+            {
+                this.world.cellList.splice(i, 1);
+            }
+        }
         this.world.emitter.removeListener("update", this._update);
     }
 }

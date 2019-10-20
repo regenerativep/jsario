@@ -177,7 +177,7 @@ class GameWorld
         for(let i = 0; i < this.cellList.length; i++)
         {
             let cell = this.cellList[i];
-            let checkRadius = cell.radius * 2;
+            let checkRadius = cell.radius * 2; //do this to get around a certain issue with the tree that we should todo: fix
             let cx1 = cell.x - checkRadius;
             let cy1 = cell.y - checkRadius;
             let cx2 = cell.x + checkRadius;
@@ -196,7 +196,7 @@ class GameWorld
             for(let j = 0; j < nearbyCells.length; j++)
             {
                 let otherCell = nearbyCells[j];
-                if(cell == otherCell || getPairChecked(cell, otherCell))
+                if(cell == otherCell || cell.group != otherCell.group || getPairChecked(cell, otherCell))
                 {
                     continue;
                 }
