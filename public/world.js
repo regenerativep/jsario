@@ -44,6 +44,7 @@ class GameWorld
         this.maxSpeedMultiplier = 6;
         this.recombineTimeMultiplier = 15;
         this.cellSpreadDivider = 1;
+        this.minimumCellEatRatio = 1.25;
         this.foodGain = 1;
         this.foodRadius = 2;
         this.foodAccumulateRate = 0.5;
@@ -172,7 +173,6 @@ class GameWorld
             let cellBstr = cellB.id.toString();
             checkedPairs[cellAstr + "-" + cellBstr] = 1;
         }
-        let killedCells = [];
         this.cellList = this.cellList.sort((a, b) => { return b.mass - a.mass; }); //descending
         for(let i = 0; i < this.cellList.length; i++)
         {
@@ -193,48 +193,52 @@ class GameWorld
                     nearbyCells.splice(j, 1);
                 }
             }
-            for(let j = 0; j < nearbyCells.length; j++)
+            for(let j = nearbyCells.length - 1; j >= 0; j--)
             {
                 let otherCell = nearbyCells[j];
-                if(cell == otherCell || cell.group != otherCell.group || getPairChecked(cell, otherCell))
+                if(cell == otherCell || cell.mass <= 0 || otherCell.mass <= 0 || getPairChecked(cell, otherCell))
                 {
                     continue;
                 }
                 let aCell = cell, bCell = otherCell;
-                if(aCell.timeToRecombine <= 0 && bCell.timeToRecombine <= 0)
+                let distX = (bCell.x + bCell.vx) - (aCell.x + aCell.vx);
+                let distY = (bCell.y + bCell.vy) - (aCell.y + aCell.vy);
+                let dist = Math.sqrt(distX ** 2 + distY ** 2); //todo: use sqrt sparingly
+                let largestCell, smallCell;
+                if(aCell.radius > bCell.radius)
                 {
-                    if(aCell.mass <= 0 || bCell.mass <= 0)
+                    largestCell = aCell;
+                    smallCell = bCell;
+                }
+                else
+                {
+                    largestCell = bCell;
+                    smallCell = aCell;
+                }
+                if(cell.group != otherCell.group)
+                {
+                    //this is an enemy cell. see if we can eat it
+                    if(smallCell.mass * this.minimumCellEatRatio < largestCell.mass)
                     {
-                        continue;
-                    }
-                    let distX = (bCell.x + bCell.vx) - (aCell.x + aCell.vx);
-                    let distY = (bCell.y + bCell.vy) - (aCell.y + aCell.vy);
-                    let dist = Math.sqrt(distX ** 2 + distY ** 2);
-                    let largestCell, smallCell;
-                    if(aCell.radius > bCell.radius)
-                    {
-                        largestCell = aCell;
-                        smallCell = bCell;
-                    }
-                    else
-                    {
-                        largestCell = bCell;
-                        smallCell = aCell;
-                    }
-                    if(dist < largestCell.radius)
-                    {
-                        largestCell.changeMass(largestCell.mass + smallCell.mass);
-                        smallCell.changeMass(0);
-                        killedCells.push(smallCell);
+                        //we can eat it
+                        if(dist < largestCell.radius)
+                        {
+                            //eat it
+                            largestCell.eat(smallCell);
+                        }
                     }
                 }
                 else
                 {
-                    if(aCell.group == bCell.group)
+                    if(aCell.timeToRecombine <= 0 && bCell.timeToRecombine <= 0)
                     {
-                        let distX = (bCell.x + bCell.vx) - (aCell.x + aCell.vx);
-                        let distY = (bCell.y + bCell.vy) - (aCell.y + aCell.vy);
-                        let dist = Math.sqrt(distX ** 2 + distY ** 2);
+                        if(dist < largestCell.radius)
+                        {
+                            largestCell.eat(smallCell);
+                        }
+                    }
+                    else
+                    {
                         if(dist < aCell.radius + bCell.radius)
                         {
                             if(dist == 0) dist = 1; //prevent div by 0
@@ -243,30 +247,11 @@ class GameWorld
                             let distd2 = (aCell.radius + bCell.radius - dist) / (2 * this.cellSpreadDivider);
                             aCell.changePosition(aCell.x - uX * distd2, aCell.y - uY * distd2);
                             bCell.changePosition(bCell.x + uX * distd2, bCell.y + uY * distd2);
-                            /*
-                            let dvx = bCell.vx - aCell.vx;
-                            let dvy = bCell.vy - aCell.vy;
-                            //perpendicular
-                            let pX = uY;
-                            let pY = -uX;
-                            let proj = projectVectors(dvx, dvy, pX, pY);
-                            let mag = Math.sqrt(proj.x ** 2 + proj.y ** 2);
-                            if(mag > this.cellularFriction)
-                            {
-                                mag = this.cellularFriction;
-                            }
-                            aCell.apply(-pX * mag, -pY * mag);
-                            bCell.apply(pX * mag, pY * mag);*/
                         }
                     }
                 }
                 setPairChecked(cell, otherCell);
             }
-        }
-        for(let i = 0; i < killedCells.length; i++)
-        {
-            let cell = killedCells[i];
-            this.removeEntity(cell);
         }
         this.foodToPlace += this.foodAccumulateRate;
         while(this.foodToPlace > 1)

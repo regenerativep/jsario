@@ -181,6 +181,12 @@ class GameCell
         }
         this.world.emitter.removeListener("update", this._update);
     }
+    eat(target)
+    {
+        this.changeMass(target.mass + this.mass);
+        target.changeMass(0);
+        this.world.removeEntity(target);
+    }
 }
 try
 {

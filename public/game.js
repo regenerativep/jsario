@@ -179,7 +179,7 @@ var halfWidth, halfHeight;
 var cam = new Camera();
 var client = new Client(cam);
 var connected = false;
-var ws = new WebSocket("ws://127.0.0.1:5524");
+var ws = new WebSocket("ws://108.20.233.102:5524");
 var spacePressed, lastSpacePressed;
 var wPressed, lastWPressed;
 var foodRadius = 4;
@@ -218,15 +218,24 @@ ws.onmessage = function(ev) {
         client.removeEntity(data.id);
     }
 };
-function zaggyLine(x,y,l, wid)
+var sqrt3 = Math.sqrt(3);
+var len = 30;
+var len3 = len * 3;
+var len15 = len * 1.5;
+var lend2 = len / 2;
+var wid = lend2 * sqrt3;
+var wid2 = wid * 2;
+var wid4 = wid * 4;
+function zaggyLine(x, y, wid)
 {
     let currX = x;
     let currY = y;
     let up = false;
-    while(currX < x + width + l + wid)
+    let wlw = x + width + len + wid;
+    while(currX < wlw)
     {
-        let nextX = currX + l/2 * Math.sqrt(3);
-        let nextY = (up) ? currY + l/2 : currY - l/2 ;
+        let nextX = currX + (lend2 * sqrt3);
+        let nextY = (up) ? currY + lend2 : currY - lend2 ;
         stroke(50,50,50);
         strokeWeight(2);
         line(currX,currY,nextX,nextY);
@@ -234,23 +243,21 @@ function zaggyLine(x,y,l, wid)
         currY = nextY;
         if(up)
         {
-            line(currX,currY,currX,currY+l);
+            line(currX,currY,currX,currY+len);
         }
         up = !up;
     }
 }
 function hexTile(camera)
 {
-    let len = 30;
-    let wid = len/2*Math.sqrt(3);
-    let x = camera.camX - camera.camX % (wid * 2) - wid * 4;
-    let y = camera.camY - camera.camY % (len * 3) - len * 1.5;
+    let x = camera.camX - camera.camX % (wid2) - wid4;
+    let y = camera.camY - camera.camY % (len3) - len15;
     //let offset = ((camera.camX - camera.camX % (wid))/(wid)) % 2 == 0 ? false:true;
     let offset = false;
 
-    for(let i = y; i < y + height + (len * 3); i += len*1.5)
+    for(let i = y; i < y + height + len3; i += len15)
     {
-        zaggyLine(x + (offset ? wid : 0),i,len, wid * 4);
+        zaggyLine(x + (offset ? wid : 0), i, wid4);
         offset = !offset;
     }
 }
