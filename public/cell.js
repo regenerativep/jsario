@@ -17,8 +17,8 @@ class GameCell
         this.changeMass(32);
         this.targetX = 0;
         this.targetY = 0;
-        this.moveAcceleration = 1;
-        this.launchAcceleration = 10;
+        this.moveAcceleration = 0.8;
+        this.launchAcceleration = 30;
         this.angle = 0;
         this.group = [this];
         var thisCell = this;
@@ -29,21 +29,16 @@ class GameCell
     }
     setRecombineTime(mass)
     {
-        this.timeToRecombine = 0;
-        this.addRecombineTime(mass);
-    }
-    addRecombineTime(mass)
-    {
-        this.timeToRecombine += mass * this.world.recombineTimeMultiplier;
+        this.timeToRecombine = 600 + mass * this.world.recombineTimeMultiplier;
     }
     changeMass(newMass)
     {
         let oldMass = this.mass * 1;
         if(isNaN(oldMass)) oldMass = 0;
         this.mass = newMass;
-        //this.addRecombineTime(this.mass - oldMass);
         this.radius = Math.sqrt(this.mass / Math.PI) * this.world.radiusMultiplier;
-        this.maxSpeed = this.world.maxSpeedMultiplier / Math.pow(this.radius, 0.449);
+        this.sizeBasedFrictionCoefficient = Math.pow(this.radius, 0.449);
+        this.maxSpeed = this.world.maxSpeedMultiplier / this.sizeBasedFrictionCoefficient;
         this.world.pushEntityUpdate(this, "mass", "radius");
     }
     apply(vx, vy)
@@ -58,20 +53,20 @@ class GameCell
         let uY = Math.sin(this.angle);
         this.apply(uX * this.moveAcceleration, uY * this.moveAcceleration);
         
-        let dist = Math.sqrt((this.vx ** 2) + (this.vy ** 2));
-        if(dist > this.maxSpeed)
+        let distSqr = (this.vx ** 2) + (this.vy ** 2);
+        let dist = Math.sqrt(distSqr);
+        uX = this.vx / dist;
+        uY = this.vy / dist;
+        //calculate friction
+        let fricMag = this.world.cellFrictionCoefficient * this.sizeBasedFrictionCoefficient * dist;
+        if(dist > fricMag)
         {
-            uX = this.vx / dist;
-            uY = this.vy / dist;
-            if(dist > this.maxSpeed + this.world.friction)
-            {
-                this.apply(-uX * this.world.friction, -uY * this.world.friction);
-            }
-            else
-            {
-                this.vx = uX * this.maxSpeed;
-                this.vy = uY * this.maxSpeed;
-            }
+            this.apply(-uX * fricMag, -uY * fricMag);
+        }
+        else
+        {
+            this.vx = 0;
+            this.vy = 0;
         }
         let newX = this.x + this.vx;
         let newY = this.y + this.vy;
@@ -133,7 +128,6 @@ class GameCell
         this.changeMass(halfMass);
         cell.changeMass(halfMass);
         cell.setRecombineTime(cell.mass);
-        //cell.addRecombineTime(cell.mass);
         cell.vx = this.vx;
         cell.vy = this.vy;
         cell.targetX = this.targetX;

@@ -158,9 +158,10 @@ function main()
         {
             return;
         }
-        let cell = new GameCell(gameWorld, 0, 0);
+        let x = Math.random() * gameWorld.width;
+        let y = Math.random() * gameWorld.height;
+        let cell = new GameCell(gameWorld, x, y);
         let user = new GameUser(socket, id);
-        //user.cells.push(cell);
         user.cells = cell.group;
         //we need to catch the user up with all of the already existing entities
         let allEntityData = gameWorld.getAllEntityData();

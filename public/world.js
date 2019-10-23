@@ -36,8 +36,7 @@ class GameWorld
         this.entityList = [];
         this.entityTree = new Quadtree(0, 0, width, height, null);
         this.cellList = [];
-        this.friction = 1.2;
-        this.cellularFriction = 0.02;
+        this.cellFrictionCoefficient = 0.05;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.radiusMultiplier = 6;
