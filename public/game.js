@@ -57,6 +57,7 @@ class Camera
     {
         this.camX = 0;
         this.camY = 0;
+        this.scale = 1;
     }
     track(c)
     {
@@ -79,8 +80,9 @@ class Camera
             this.camY += cell.y;
         }
 
-        this.camX = this.camX/cells.length - halfWidth;
-        this.camY = this.camY/cells.length - halfHeight;
+        this.camX = this.camX/cells.length - (halfWidth / this.scale);
+        this.camY = this.camY/cells.length - (halfHeight / this.scale);
+        scale(this.scale);
         translate(-this.camX,-this.camY);
         if(showDebug)
         {
@@ -103,6 +105,13 @@ class Camera
                 }
             }
         }
+    }
+    getAbsoluteMouse()
+    {
+        return {
+            x: this.camX + (mouseX / this.scale),
+            y: this.camY + (mouseY / this.scale)
+        };
     }
 }
 function readProp(val, def)
@@ -135,10 +144,11 @@ class Client
     {
         let doSplit = spacePressed && !lastSpacePressed;
         let doShoot = wPressed && !lastWPressed;
+        let mousePos = cam.getAbsoluteMouse();
         this.webSock.send(JSON.stringify({
             type: "input",
-            x: this.camera.camX + mouseX,
-            y: this.camera.camY + mouseY,
+            x: mousePos.x,
+            y: mousePos.y,
             split: doSplit,
             shoot: doShoot
         }));
@@ -176,7 +186,10 @@ class Client
                 entity[key] = e[key];
                 properties.push(key);
             }
-            entity.updatedProperties(properties);
+            if(typeof entity.updatedProperties === "function")
+            {
+                entity.updatedProperties(properties);
+            }
         }
     }
     removeEntity(id)
@@ -223,7 +236,7 @@ var halfWidth, halfHeight;
 var cam = new Camera();
 var client = new Client(cam);
 var connected = false;
-var ws = new WebSocket("ws://108.20.233.102:5524");
+var ws = new WebSocket("ws://10.229.217.245:5524");
 var spacePressed, lastSpacePressed;
 var wPressed, lastWPressed;
 var foodRadius = 4, foodGraphic = null;
