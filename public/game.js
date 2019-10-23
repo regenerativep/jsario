@@ -327,7 +327,13 @@ function drawQuadtree(tree)
 }
 function setup()
 {
-    createCanvas(1024, 768);
+    createCanvas(windowWidth, windowHeight);
+    halfWidth = width / 2;
+    halfHeight = height / 2;
+}
+function windowResized()
+{
+    resizeCanvas(windowWidth, windowHeight);
     halfWidth = width / 2;
     halfHeight = height / 2;
 }

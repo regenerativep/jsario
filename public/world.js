@@ -36,12 +36,12 @@ class GameWorld
         this.entityList = [];
         this.entityTree = new Quadtree(0, 0, width, height, null);
         this.cellList = [];
-        this.cellFrictionCoefficient = 0.05;
+        this.cellFrictionCoefficient = 0.04;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.radiusMultiplier = 6;
         this.maxSpeedMultiplier = 6;
-        this.recombineTimeMultiplier = 15;
+        this.recombineTimeMultiplier = 2;
         this.cellSpreadDivider = 1;
         this.minimumCellEatRatio = 1.25;
         this.foodGain = 1;
@@ -195,7 +195,7 @@ class GameWorld
             for(let j = nearbyCells.length - 1; j >= 0; j--)
             {
                 let otherCell = nearbyCells[j];
-                if(cell == otherCell || cell.mass <= 0 || otherCell.mass <= 0 || getPairChecked(cell, otherCell))
+                if(cell == otherCell || cell.mass <= 0 || otherCell.mass <= 0 || getPairChecked(cell, otherCell) || cell.gracePeriod <= 0 || otherCell.gracePeriod <= 0)
                 {
                     continue;
                 }

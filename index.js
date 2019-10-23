@@ -107,7 +107,7 @@ function broadcast(data)
 }
 function main()
 {
-    gameWorld = new GameWorld(2048, 2048);
+    gameWorld = new GameWorld(4096, 4096);
     gameWorld.emitter.on("createEntity", (entity, ...properties) => {
         let data = {
             type: "createEntity",

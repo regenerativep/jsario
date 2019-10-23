@@ -14,11 +14,12 @@ class GameCell
         this.vy = 0;
         this.id = world.requestEntityId();
         this.timeToRecombine = 0;
+        this.graceTime = 0;
         this.changeMass(32);
         this.targetX = 0;
         this.targetY = 0;
-        this.moveAcceleration = 0.8;
-        this.launchAcceleration = 30;
+        this.moveAcceleration = 0.6;
+        this.launchAcceleration = 1.75;
         this.angle = 0;
         this.group = [this];
         var thisCell = this;
@@ -29,7 +30,8 @@ class GameCell
     }
     setRecombineTime(mass)
     {
-        this.timeToRecombine = 600 + mass * this.world.recombineTimeMultiplier;
+        this.timeToRecombine = 600 + Math.sqrt(mass) * this.world.recombineTimeMultiplier;
+        this.graceTime = 60;
     }
     changeMass(newMass)
     {
@@ -120,6 +122,10 @@ class GameCell
             }
         }
         this.timeToRecombine--;
+        if(this.graceTime >= 0)
+        {
+            this.graceTime--;
+        }
     }
     split()
     {
@@ -141,7 +147,8 @@ class GameCell
         this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
         let uX = Math.cos(this.angle);
         let uY = Math.sin(this.angle);
-        this.apply(uX * this.launchAcceleration, uY * this.launchAcceleration)
+        let accel = this.launchAcceleration * Math.pow(this.radius, 0.7);
+        this.apply(uX * accel, uY * accel)
         this.changePosition(this.x + this.vx, this.y + this.vy);
     }
     changePosition(newX, newY)
