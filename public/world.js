@@ -44,6 +44,7 @@ class GameWorld
         this.cellFrictionCoefficient = 0.06;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
+        this.minShootSize = 35;
         this.radiusMultiplier = 6;
         this.maxSpeedMultiplier = 6;
         this.recombineTimeMultiplier = 2;
