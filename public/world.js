@@ -12,6 +12,10 @@ try
     {
         var GameCell = require("./cell.js");
     }
+    if(typeof GameMass === "undefined")
+    {
+        var GameMass = require("./mass.js");
+    }
 }
 catch(e)
 {
@@ -37,6 +41,7 @@ class GameWorld
         this.entityTree = new Quadtree(0, 0, width, height, null);
         this.cellList = [];
         this.cellFrictionCoefficient = 0.04;
+        this.cellFrictionCoefficient = 0.06;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.radiusMultiplier = 6;
@@ -46,13 +51,15 @@ class GameWorld
         this.minimumCellEatRatio = 1.25;
         this.foodGain = 1;
         this.foodRadius = 2;
+        this.massRadius = 6;
         this.foodAccumulateRate = 0.5;
         this.foodToPlace = 0;
         this.lastEntityId = 0;
         this.freeIds = [];
         this.entityTypes = { //what variables in the entity to keep track of //todo: centralize this
             cell: ["entityType", "id", "x", "y", "mass", "radius"],
-            food: ["entityType", "id", "x", "y"]
+            food: ["entityType", "id", "x", "y"],
+            mass: ["entityType", "id", "x", "y"]
         };
         this.queuedEntityData = {};
         this.queuedEntityDataOrder = [];
@@ -181,6 +188,33 @@ class GameWorld
             let cy1 = cell.y - checkRadius;
             let cx2 = cell.x + checkRadius;
             let cy2 = cell.y + checkRadius;
+            let nearbyMass = this.entityTree.getItemsIn((rx, ry, rw, rh) => {
+                return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
+            });
+            for(let j = nearbyMass.length - 1; j >= 0; j--)
+            {
+                let entity = nearbyMass[j];
+                if(entity.entityType != "mass")
+                {
+                    nearbyCells.splice(j, 1);
+                }
+            }
+            for(let j = nearbyMass.length-1; j >= 0; j--)
+            {
+                let mass = nearbyMass[j];
+                let distX = (mass.x + mass.vx) - (cell.x + cell.vx);
+                let distY = (mass.y + mass.vy) - (cell.y + cell.vy);
+                let dist = Math.sqrt(distX ** 2 + distY ** 2);
+                if(mass.mass * this.minimumCellEatRatio < cell.mass)
+                    {
+                        //we can eat it
+                        if(dist < cell.radius)
+                        {
+                            //eat it
+                            cell.eat(mass);
+                        }
+                    }
+            }
             let nearbyCells = this.entityTree.getItemsIn((rx, ry, rw, rh) => {
                 return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
             });

@@ -220,7 +220,8 @@ function main()
                 let cell = user.cells[i];
                 if(cell.mass > gameWorld.minShootSize)
                 {
-                    //add shot mass to worlds entities
+                    let newMass = cell.shoot();
+                    newMass.launch();
                 }
             }
         }

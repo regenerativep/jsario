@@ -51,6 +51,59 @@ class Cell
         }
     }
 }
+class Mass
+{
+    constructor(x, y, radius, mass, id)
+    {
+        this.x = x;
+        this.y = y;
+        this.id = id;
+        this.radius = 6; //magic number here based on radius in world
+        this.mass = mass;
+        this.type = "mass";
+        this.circleGraphic = null;
+        this.drawFromX = x - this.radius;
+        this.drawFromY = y - this.radius;
+    }
+    updatedProperties(props)
+    {
+        for(let i = 0; i < props.length; i++)
+        {
+            let prop = props[i];
+            if(prop == "radius")
+            { 
+                this.updateCircleGraphic();
+            }
+            else if(prop == "x")
+            {
+                this.drawFromX = this.x - this.radius;
+            }
+            else if(prop == "y")
+            {
+                this.drawFromY = this.y - this.radius;
+            }
+        }
+    }
+    updateCircleGraphic()
+    {
+        if(this.circleGraphic != null)
+        {
+            this.circleGraphic.remove();
+        }
+        let rad2 = this.radius * 2;
+        this.circleGraphic = createGraphics(rad2, rad2);
+        this.circleGraphic.background(0, 0);
+        this.circleGraphic.ellipse(this.radius, this.radius, rad2, rad2);
+    }
+    draw()
+    {
+        //ellipse(this.x, this.y, this.radius * 2, this.radius * 2);
+        if(this.circleGraphic != null)
+        {
+            image(this.circleGraphic, this.drawFromX, this.drawFromY);
+        }
+    }
+}
 class Camera
 {
     constructor()
@@ -210,6 +263,10 @@ class Client
         {
             let entity = this.entityList[key];
             if(entity.type == "cell")
+            {
+                entity.draw();
+            }
+            else if(entity.type == "mass")
             {
                 entity.draw();
             }

@@ -1,3 +1,4 @@
+var GameMass = require("./mass.js");
 function rectangleInRectangle(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2)
 {
     return ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1;
@@ -141,6 +142,12 @@ class GameCell
         this.group.push(cell);
         return cell;
     }
+    shoot()
+    {
+        this.changeMass(this.mass - 18);
+        let mass = new GameMass(this.world,this.x,this.y,this.targetX,this.targetY);
+        return mass;
+    }
     launch()
     {
         this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
@@ -196,7 +203,8 @@ class GameCell
         }
         else if(target.entityType == "mass")
         {
-            
+            this.changeMass(target.mass + this.mass);
+            this.world.removeEntity(target);
         }
     }
 }
