@@ -117,8 +117,7 @@ class GameCell
             if(foodDist < this.world.foodRadius + this.radius)
             {
                 //eat the food particle
-                this.world.removeEntity(particle);
-                this.changeMass(this.mass + this.world.foodGain);
+                this.eat(particle);
             }
         }
         this.timeToRecombine--;
@@ -184,9 +183,21 @@ class GameCell
     }
     eat(target)
     {
-        this.changeMass(target.mass + this.mass);
-        target.changeMass(0);
-        this.world.removeEntity(target);
+        if(target.entityType == "cell")
+        {
+            this.changeMass(target.mass + this.mass);
+            target.changeMass(0);
+            this.world.removeEntity(target);
+        }
+        else if(target.entityType == "food")
+        {
+            this.world.removeEntity(particle);
+            this.changeMass(this.mass + this.world.foodGain);
+        }
+        else if(target.entityType == "mass")
+        {
+            
+        }
     }
 }
 try
