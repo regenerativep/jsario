@@ -51,7 +51,7 @@ class GameWorld
         this.lastEntityId = 0;
         this.freeIds = [];
         this.entityTypes = { //what variables in the entity to keep track of //todo: centralize this
-            cell: ["entityType", "id", "x", "y", "mass", "radius"],
+            cell: ["entityType", "id", "x", "y", "mass", "radius", "color"],
             food: ["entityType", "id", "x", "y"]
         };
         this.queuedEntityData = {};

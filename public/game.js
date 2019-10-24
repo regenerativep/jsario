@@ -40,11 +40,11 @@ class Cell
         let rad2 = this.radius * 2;
         this.circleGraphic = createGraphics(rad2, rad2);
         this.circleGraphic.background(0, 0);
+        this.circleGraphic.fill(this.color[0], this.color[1], this.color[2]);
         this.circleGraphic.ellipse(this.radius, this.radius, rad2, rad2);
     }
     draw()
     {
-        //ellipse(this.x, this.y, this.radius * 2, this.radius * 2);
         if(this.circleGraphic != null)
         {
             image(this.circleGraphic, this.drawFromX, this.drawFromY);
@@ -166,7 +166,10 @@ class Client
             let y = readProp(entityData["y"], -1);
             let mass = readProp(entityData["mass"], -1);
             let radius = readProp(entityData["radius"], -1);
-            this.entityList[id] = new Cell(x, y, radius, mass, id);
+            let color = readProp(entityData["color"], [255, 0, 0]);
+            let cell = new Cell(x, y, radius, mass, id);
+            cell.color = color;
+            this.entityList[id] = cell;
         }
         else if(entityData.entityType=="food")
         {
@@ -236,7 +239,7 @@ var halfWidth, halfHeight;
 var cam = new Camera();
 var client = new Client(cam);
 var connected = false;
-var ws = new WebSocket("ws://10.229.217.245:5524");
+var ws = new WebSocket("ws://127.0.0.1:5524");
 var spacePressed, lastSpacePressed;
 var wPressed, lastWPressed;
 var foodRadius = 4, foodGraphic = null;

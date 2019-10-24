@@ -2,9 +2,19 @@ function rectangleInRectangle(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2)
 {
     return ax1 < bx2 && ax2 > bx1 && ay1 < by2 && ay2 > by1;
 }
+function randomHuedColor()
+{
+    let which = Math.floor(Math.random() * 3);
+    let other = Math.floor(Math.random() * 2) + 1;
+    other = (which + other) % 3;
+    let color = [0, 0, 0];
+    color[which] = 255;
+    color[other] = Math.floor(Math.random() * 256);
+    return color;
+}
 class GameCell
 {
-    constructor(world, x, y)
+    constructor(world, x, y, color)
     {
         this.world = world;
         this.entityType = "cell";
@@ -15,6 +25,14 @@ class GameCell
         this.id = world.requestEntityId();
         this.timeToRecombine = 0;
         this.graceTime = 0;
+        if(typeof color === "undefined")
+        {
+            this.color = randomHuedColor();
+        }
+        else
+        {
+            this.color = color;
+        }
         this.changeMass(32);
         this.targetX = 0;
         this.targetY = 0;
@@ -25,7 +43,7 @@ class GameCell
         var thisCell = this;
         this._update = () => { thisCell.update(); };
         this.world.emitter.on("update", this._update);
-        this.world.addEntity(this, "id", "x", "y", "mass", "radius");
+        this.world.addEntity(this, "id", "x", "y", "mass", "radius", "color");
         this.world.cellList.push(this);
     }
     setRecombineTime(mass)
@@ -128,7 +146,7 @@ class GameCell
     }
     split()
     {
-        let cell = new GameCell(this.world, this.x, this.y);
+        let cell = new GameCell(this.world, this.x, this.y, this.color);
         let halfMass = this.mass / 2;
         this.changeMass(halfMass);
         cell.changeMass(halfMass);
@@ -191,12 +209,12 @@ class GameCell
         }
         else if(target.entityType == "food")
         {
-            this.world.removeEntity(particle);
+            this.world.removeEntity(target);
             this.changeMass(this.mass + this.world.foodGain);
         }
         else if(target.entityType == "mass")
         {
-            
+
         }
     }
 }
