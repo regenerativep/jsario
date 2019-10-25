@@ -60,7 +60,7 @@ class GameWorld
         this.entityTypes = { //what variables in the entity to keep track of //todo: centralize this
             cell: ["entityType", "id", "x", "y", "mass", "radius", "color"],
             food: ["entityType", "id", "x", "y"],
-            mass: ["entityType", "id", "x", "y"]
+            mass: ["entityType", "id", "x", "y", "mass"]
         };
         this.queuedEntityData = {};
         this.queuedEntityDataOrder = [];
@@ -189,48 +189,48 @@ class GameWorld
             let cy1 = cell.y - checkRadius;
             let cx2 = cell.x + checkRadius;
             let cy2 = cell.y + checkRadius;
-            let nearbyMass = this.entityTree.getItemsIn((rx, ry, rw, rh) => {
+            let nearbyItems = this.entityTree.getItemsIn((rx, ry, rw, rh) => {
                 return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
             });
-            for(let j = nearbyMass.length - 1; j >= 0; j--)
+            let nearbyMass = [];
+            let nearbyCells = [];
+            for(let j = nearbyItems.length - 1; j >= 0; j--)
             {
-                let entity = nearbyMass[j];
-                if(entity.entityType != "mass")
+                let entity = nearbyItems[j];
+                if(entity.entityType == "mass")
                 {
-                    nearbyCells.splice(j, 1);
+                    nearbyMass.push(entity);
+                }
+                else if(entity.entityType == "cell")
+                {
+                    nearbyCells.push(entity);
                 }
             }
             for(let j = nearbyMass.length-1; j >= 0; j--)
             {
                 let mass = nearbyMass[j];
+                if(mass.graceTime >= 0)
+                {
+                    continue;
+                }
+                console.log("massss");
                 let distX = (mass.x + mass.vx) - (cell.x + cell.vx);
                 let distY = (mass.y + mass.vy) - (cell.y + cell.vy);
-                let dist = Math.sqrt(distX ** 2 + distY ** 2);
+                let distSqr = distX ** 2 + distY ** 2;
                 if(mass.mass * this.minimumCellEatRatio < cell.mass)
-                    {
-                        //we can eat it
-                        if(dist < cell.radius)
-                        {
-                            //eat it
-                            cell.eat(mass);
-                        }
-                    }
-            }
-            let nearbyCells = this.entityTree.getItemsIn((rx, ry, rw, rh) => {
-                return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
-            });
-            for(let j = nearbyCells.length - 1; j >= 0; j--)
-            {
-                let entity = nearbyCells[j];
-                if(entity.entityType != "cell")
                 {
-                    nearbyCells.splice(j, 1);
+                    //we can eat it
+                    if(distSqr < cell.radius ** 2)
+                    {
+                        //eat it
+                        cell.eat(mass);
+                    }
                 }
             }
             for(let j = nearbyCells.length - 1; j >= 0; j--)
             {
                 let otherCell = nearbyCells[j];
-                if(cell == otherCell || cell.mass <= 0 || otherCell.mass <= 0 || getPairChecked(cell, otherCell) || cell.gracePeriod <= 0 || otherCell.gracePeriod <= 0)
+                if(cell == otherCell || cell.mass <= 0 || otherCell.mass <= 0 || getPairChecked(cell, otherCell) || cell.graceTime >= 0 || otherCell.graceTime >= 0)
                 {
                     continue;
                 }

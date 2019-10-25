@@ -5,6 +5,7 @@ class GameMass
         this.world = world;
         this.entityType = "mass";
         this.mass = 14;
+        this.radius = 12;
         this.x = x;
         this.y = y;
         this.vx = 0;
@@ -12,12 +13,13 @@ class GameMass
         this.id = world.requestEntityId();
         this.targetX = targetX;
         this.targetY = targetY;
+        this.graceTime = 60;
         this.launchAcceleration = 1.75;
         this.angle = 0;
         var thisMass = this;
         this._update = () => { thisMass.update(); };
         this.world.emitter.on("update", this._update);
-        this.world.addEntity(this, "id", "x", "y", "mass");
+        this.world.addEntity(this, "id", "x", "y", "mass", "radius");
         this.world.cellList.push(this);
     }
     apply(vx, vy)
@@ -67,6 +69,11 @@ class GameMass
             this.vy = 0;
         }
         this.changePosition(newX, newY);
+
+        if(this.graceTime >= 0)
+        {
+            this.gracetime--;
+        }
     }
     launch()
     {
@@ -79,16 +86,15 @@ class GameMass
     }
     changePosition(newX, newY)
     {
-        if(isNaN(newX) && !isNaN(this.x))
-        {
-            debugger;
-        }
-        
         let prevX = this.x, prevY = this.y;
         this.x = newX;
         this.y = newY;
         this.world.entityTree.moveItem(this, prevX, prevY);
         this.world.pushEntityUpdate(this, "x", "y");
+    }
+    close()
+    {
+        this.world.emitter.removeListener("update", this._update);
     }
 }
 try

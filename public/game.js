@@ -58,12 +58,13 @@ class Mass
         this.x = x;
         this.y = y;
         this.id = id;
-        this.radius = 6; //magic number here based on radius in world
+        this.radius = radius;
         this.mass = mass;
         this.type = "mass";
         this.circleGraphic = null;
         this.drawFromX = x - this.radius;
         this.drawFromY = y - this.radius;
+        this.updateCircleGraphic();
     }
     updatedProperties(props)
     {
@@ -97,11 +98,12 @@ class Mass
     }
     draw()
     {
-        //ellipse(this.x, this.y, this.radius * 2, this.radius * 2);
-        if(this.circleGraphic != null)
+        /*if(this.circleGraphic != null)
         {
             image(this.circleGraphic, this.drawFromX, this.drawFromY);
-        }
+        }*/
+        fill(255, 0, 0);
+        ellipse(this.x, this.y, this.radius * 2, this.radius * 2);
     }
 }
 class Camera
@@ -229,6 +231,15 @@ class Client
             let x = readProp(entityData["x"], -1);
             let y = readProp(entityData["y"], -1);
             this.entityList[id] = {x: x, y: y, id: id, type: "food"};
+        }
+        else if(entityData.entityType == "mass")
+        {
+            let x = readProp(entityData["x"], -1);
+            let y = readProp(entityData["y"], -1);
+            let mass = readProp(entityData["mass"], -1);
+            let radius = readProp(entityData["radius"], -1);
+            let massEntity = new Mass(x, y, radius, mass, id);
+            this.entityList[id] = massEntity;
         }
     }
     updateEntity(e)

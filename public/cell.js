@@ -50,7 +50,7 @@ class GameCell
     setRecombineTime(mass)
     {
         this.timeToRecombine = 600 + Math.sqrt(mass) * this.world.recombineTimeMultiplier;
-        this.graceTime = 60;
+        this.graceTime = 20;
     }
     changeMass(newMass)
     {
@@ -221,6 +221,7 @@ class GameCell
         }
         else if(target.entityType == "mass")
         {
+            console.log(target.graceTime);
             this.changeMass(target.mass + this.mass);
             this.world.removeEntity(target);
         }
