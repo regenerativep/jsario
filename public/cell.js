@@ -91,24 +91,25 @@ class GameCell
         }
         let newX = this.x + this.vx;
         let newY = this.y + this.vy;
-        if(newX < 0)
+        let radius = this.radius
+        if(newX - radius < 0)
         {
-            newX = 0;
+            newX = 0 + radius;
             this.vx = 0;
         }
-        if(newY < 0)
+        if(newY - radius < 0)
         {
-            newY = 0;
+            newY = 0 + radius;
             this.vy = 0;
         }
-        if(newX > this.world.width)
+        if(newX + radius > this.world.width)
         {
-            newX = this.world.width;
+            newX = this.world.width - radius;
             this.vx = 0;
         }
-        if(newY > this.world.height)
+        if(newY + radius > this.world.height)
         {
-            newY = this.world.height;
+            newY = this.world.height - radius;
             this.vy = 0;
         }
         this.changePosition(newX, newY);
