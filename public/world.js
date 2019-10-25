@@ -41,7 +41,7 @@ class GameWorld
         this.entityTree = new Quadtree(0, 0, width, height, null);
         this.cellList = [];
         this.cellFrictionCoefficient = 0.04;
-        this.cellFrictionCoefficient = 0.06;
+        this.massFrictionCoefficient = 0.03;
         this.maxSplitCount = 16;
         this.minSplitSize = 16;
         this.minShootSize = 35;
@@ -209,11 +209,12 @@ class GameWorld
             for(let j = nearbyMass.length-1; j >= 0; j--)
             {
                 let mass = nearbyMass[j];
-                if(mass.graceTime >= 0)
+                if(mass.graceTime > 0)
                 {
+                    //console.log(mass.graceTime);
                     continue;
                 }
-                console.log("massss");
+                //console.log("massss");
                 let distX = (mass.x + mass.vx) - (cell.x + cell.vx);
                 let distY = (mass.y + mass.vy) - (cell.y + cell.vy);
                 let distSqr = distX ** 2 + distY ** 2;

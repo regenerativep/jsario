@@ -38,7 +38,7 @@ class GameCell
         this.targetX = 0;
         this.targetY = 0;
         this.moveAcceleration = 0.6;
-        this.launchAcceleration = 1.75;
+        this.launchAcceleration = 2;
         this.angle = 0;
         this.group = [this];
         var thisCell = this;
@@ -222,7 +222,6 @@ class GameCell
         }
         else if(target.entityType == "mass")
         {
-            console.log(target.graceTime);
             this.changeMass(target.mass + this.mass);
             this.world.removeEntity(target);
         }
