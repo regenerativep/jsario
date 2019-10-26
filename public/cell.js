@@ -25,7 +25,7 @@ class GameCell
         this.vy = 0;
         this.id = world.requestEntityId();
         this.timeToRecombine = 0;
-        this.graceTime = 0;
+        this.graceTime = 10;
         if(typeof color === "undefined")
         {
             this.color = randomHuedColor();
@@ -50,7 +50,6 @@ class GameCell
     setRecombineTime(mass)
     {
         this.timeToRecombine = 600 + Math.sqrt(mass) * this.world.recombineTimeMultiplier;
-        this.graceTime = 20;
     }
     changeMass(newMass)
     {
@@ -164,7 +163,11 @@ class GameCell
     shoot()
     {
         this.changeMass(this.mass - 18);
-        let mass = new GameMass(this.world,this.x,this.y,this.targetX,this.targetY);
+        let uX = Math.cos(this.angle);
+        let uY = Math.sin(this.angle);
+        let mass = new GameMass(this.world, this.x, this.y, this.targetX, this.targetY);
+        mass.x += uX * (this.radius - mass.radius);
+        mass.y += uY * (this.radius - mass.radius);
         return mass;
     }
     launch()

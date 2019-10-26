@@ -13,7 +13,7 @@ class Quadtree
             this.depth = parent.depth + 1;
         }
         this.children = null;
-        this.item = null;
+        this.items = null;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -21,28 +21,32 @@ class Quadtree
         this.widd2 = x + width / 2;
         this.hgtd2 = y + height / 2;
         this.maxDepth = 32;
+        this.maxItems = 1;
         this.triggered = false;
     }
     addItem(item)
     {
-        if(this.item != null)
+        if(this.items != null)
         {
-            if(this.item.x == item.x && this.item.y == item.y)
+            this.items.push(item);
+            if(this.items.length > this.maxItems)
             {
-                return;
+                this.split();
             }
-            this.split();
         }
-        if(this.children != null)
+        else
         {
-            let child = 0;
-            child |= item.x > this.widd2 ? 1 : 0;
-            child |= item.y > this.hgtd2 ? 2 : 0;
-            this.children[child].addItem(item);
-        }
-        else if(this.item == null)
-        {
-            this.item = item;
+            if(this.children != null)
+            {
+                let child = 0;
+                child |= item.x > this.widd2 ? 1 : 0;
+                child |= item.y > this.hgtd2 ? 2 : 0;
+                this.children[child].addItem(item);
+            }
+            else
+            {
+                this.items = [item];
+            }
         }
     }
     getItemsIn(cond)
@@ -53,13 +57,13 @@ class Quadtree
             if(this.children == null)
             {
                 this.triggered = true;
-                if(this.item == null)
+                if(this.items == null)
                 {
                     return [];
                 }
                 else
                 {
-                    return [this.item];
+                    return this.items;
                 }
             }
             else
@@ -78,34 +82,35 @@ class Quadtree
     attemptCollapse()
     {
         let heldItems = 0;
-        let item = null;
+        let items = null;
         if(this.children != null)
         {
             for(let i = 0; i < this.children.length; i++)
             {
-                if(this.children[i].item != null)
+                let child = this.children[i];
+                if(child.items != null && child.items.length > 0)
                 {
                     heldItems += 1;
-                    item = this.children[i].item;
+                    items = child.items;
                 }
-                if(this.children[i].children != null)
+                if(child.children != null)
                 {
                     heldItems += 2;
                 }
             }
         }
-        if(heldItems<2)
+        if(heldItems < 2)
         {
             this.children = null;
             if(heldItems == 1)
             {
-                this.item = item;
+                this.items = items;
             }
         }
     }
     removeItem(item)
     {
-        if(this.item == null)
+        if(this.items == null || this.items.length == 0)
         {
             if(this.children != null)
             {
@@ -130,13 +135,17 @@ class Quadtree
         }
         else
         {
-            this.item = null;
-            this.parent.attemptCollapse(); //if code breaks could be a bad implementation here by me, Nate
+            let itemInd = this.items.indexOf(item);
+            if(itemInd >= 0)
+            {
+                this.items.splice(itemInd, 1);
+                this.parent.attemptCollapse(); //if code breaks could be a bad implementation here by me, Nate
+            }
         }
     }
-    moveItem(item,prevX,prevY)
+    moveItem(item, prevX, prevY)
     {
-        if(this.item == null)
+        if(this.items == null || this.items.length == 0)
         {
             if(this.children != null)
             {
@@ -156,15 +165,14 @@ class Quadtree
                 {
                     child = 2;
                 }
-                this.children[child].moveItem(item,prevX,prevY);
+                this.children[child].moveItem(item, prevX, prevY);
             }
         }
         else
         {
-            this.item = null;
-            this.parent.attemptCollapse(); //if code breaks could be a bad implementation here by me, Nate
+            this.removeItem(item);
         }
-        if(this.depth==0)
+        if(this.depth == 0)
         {
             this.addItem(item);
         }
@@ -173,7 +181,7 @@ class Quadtree
     {
         if(this.depth >= this.maxDepth)
         {
-            //return;
+            return;
         }
         this.children = [];
         let wd2 = this.width / 2;
@@ -182,9 +190,12 @@ class Quadtree
         this.children[1] = new Quadtree(this.x + wd2, this.y, wd2, hd2, this);
         this.children[2] = new Quadtree(this.x, this.y + hd2, wd2, hd2, this);
         this.children[3] = new Quadtree(this.x + wd2, this.y + hd2, wd2, hd2, this);
-        let item = this.item;
-        this.item = null;
-        this.addItem(item);
+        let items = this.items;
+        this.items = null;
+        for(let i = 0; i < items.length; i++)
+        {
+            this.addItem(items[i]);
+        }
     }
 }
 try

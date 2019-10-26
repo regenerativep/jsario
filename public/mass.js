@@ -14,7 +14,7 @@ class GameMass
         this.id = world.requestEntityId();
         this.targetX = targetX;
         this.targetY = targetY;
-        this.graceTime = 60;
+        this.graceTime = 10;
         this.launchAcceleration = 15;
         this.angle = 0;
         var thisMass = this;
