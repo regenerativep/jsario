@@ -34,6 +34,13 @@ class GameUser
             cellIds: cellIds
         }));
     }
+    sendWorldSize()
+    {
+        this.socket.send(JSON.stringify({
+            type: "worldSize",
+            size: [gameWorld.width,gameWorld.height]
+        }));
+    }
     close()
     {
         for(let i = 0; i < this.cells.length; i++)
@@ -172,6 +179,7 @@ function main()
             socket.send(JSON.stringify(entityData));
         }
         user.sendCellList();
+        user.sendWorldSize();
         users.push(user);
         user.state = userState.PLAYING;
         console.log("registered a user");

@@ -114,6 +114,74 @@ class Camera
         this.camY = 0;
         this.scale = 1;
     }
+    smoothTrack(c)
+    {
+        let prevX = this.camX;
+        let prevY = this.camY;
+        let destX = 0;
+        let destY = 0;
+        this.camX = 0;
+        this.camY = 0;
+
+        let cells = [];
+        for(let i = 0; i < c.localIds.length; i++)
+        {
+            let cell = c.findEntityFromId(c.localIds[i]);
+            if(cell!=null)
+            {
+                cells.push(cell);
+            }
+        }
+        
+        for(let i = 0; i < cells.length; i++)
+        {
+            let cell = cells[i];
+            destX += cell.x;
+            destY += cell.y;
+            console.log(cell.x + "," + cell.y);
+        }
+        destX = (destX/cells.length)-halfWidth/this.scale;
+        destY = (destY/cells.length)-halfHeight/this.scale;
+        destX = (destX + prevX)/2;
+        destY = (destY + prevY)/2;
+        // this.camX = destX;
+        // this.camY = destY;
+        if(isNaN(destX))
+        {
+            destX = prevX;
+        }
+        if(isNaN(destY))
+        {
+            destY = prevX;
+        }
+        console.log(destX+",ds,"+destY);
+        this.camX = destX;
+        this.camY = destY;
+        console.log(this.camX);
+        scale(this.scale);
+        translate(-this.camX,-this.camY);
+        if(showDebug)
+        {
+            drawQuadtree(client.foodTree);
+            for(let i = 0; i < cells.length; i++)
+            {
+                let cell = cells[i];
+                let cx1 = cell.x - cell.radius;
+                let cy1 = cell.y - cell.radius;
+                let cx2 = cell.x + cell.radius;
+                let cy2 = cell.y + cell.radius;
+                let nearbyFood = client.foodTree.getItemsIn((rx, ry, rw, rh) => {
+                    return rectangleInRectangle(cx1, cy1, cx2, cy2, rx, ry, rx + rw, ry + rh);
+                });
+                for(let j = 0; j < nearbyFood.length; j++)
+                {
+                    let particle = nearbyFood[j];
+                    stroke(255, 0, 0);
+                    line(cell.x, cell.y, particle.x, particle.y);
+                }
+            }
+        }
+    }
     track(c)
     {
         this.camX = 0;
@@ -311,6 +379,7 @@ var ws = new WebSocket("ws://127.0.0.1:5524");
 var spacePressed, lastSpacePressed;
 var wPressed, lastWPressed;
 var foodRadius = 4, foodGraphic = null;
+var worldSize = [2,2];
 ws.onopen = function() {
     console.log("connected");
     ws.send(JSON.stringify({
@@ -328,6 +397,10 @@ ws.onmessage = function(ev) {
     if (data.type == "youare")
     {
         client.receiveMyCells(data.cellIds);
+    }
+    else if (data.type == "worldSize")
+    {
+        worldSize = data.size;
     }
     else if(data.type == "createEntity")
     {
@@ -382,7 +455,7 @@ function hexTile(camera)
     let offset = false;
     stroke(50,50,50);
     strokeWeight(2);
-    for(let i = y; i < y + height + len3; i += len15)
+    for(let i = y; i < y + height + 2*len3; i += len15)
     {
         zaggyLine(x + (offset ? wid : 0), i, wid4);
         offset = !offset;
@@ -426,8 +499,11 @@ function draw()
     background(0);
     if(connected)
     {
-        cam.track(client);
+        cam.smoothTrack(client);
         hexTile(cam);
+        noFill();
+        stroke(255);
+        rect(0,0,worldSize[0],worldSize[1]);
         client.updateEntities();
     }
 
