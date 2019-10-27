@@ -38,7 +38,7 @@ class GameCell
         this.targetX = 0;
         this.targetY = 0;
         this.moveAcceleration = 0.6;
-        this.launchAcceleration = 2;
+        this.launchAcceleration = 3;
         this.angle = 0;
         this.group = [this];
         var thisCell = this;

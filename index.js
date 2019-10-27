@@ -21,6 +21,22 @@ class GameUser
         this.cells = [];
         this.id = id;
         this.state = userState.STARTING;
+        this.respawnTimeout = -1;
+        let thisUser = this;
+        gameWorld.emitter.on("removeEntity", (entity) => {
+            if(thisUser.cells.length == 0)
+            {
+                //we dead
+                thisUser.state = userState.DEAD;
+                //respawn
+                if(this.respawnTimeout < 0)
+                {
+                    this.respawnTimeout = setTimeout(() => {
+                        thisUser.respawn();
+                    }, 1000);
+                }
+            }
+        });
     }
     sendCellList()
     {
@@ -49,6 +65,16 @@ class GameUser
             gameWorld.cellList.splice(gameWorld.cellList.indexOf(cell), 1);
             gameWorld.removeEntity(cell);
         }
+    }
+    respawn()
+    {
+        let x = Math.random() * gameWorld.width;
+        let y = Math.random() * gameWorld.height;
+        let cell = new GameCell(gameWorld, x, y);
+        this.cells = cell.group;
+        this.sendCellList();
+        this.state = userState.PLAYING;
+        this.respawnTimeout = -1;
     }
 }
 
@@ -165,11 +191,8 @@ function main()
         {
             return;
         }
-        let x = Math.random() * gameWorld.width;
-        let y = Math.random() * gameWorld.height;
-        let cell = new GameCell(gameWorld, x, y);
         let user = new GameUser(socket, id);
-        user.cells = cell.group;
+        user.respawn();
         //we need to catch the user up with all of the already existing entities
         let allEntityData = gameWorld.getAllEntityData();
         for(let i = 0; i < allEntityData.length; i++)
@@ -178,10 +201,8 @@ function main()
             entityData["type"] = "createEntity";
             socket.send(JSON.stringify(entityData));
         }
-        user.sendCellList();
         user.sendWorldSize();
         users.push(user);
-        user.state = userState.PLAYING;
         console.log("registered a user");
     };
     messageResponses["input"] = (data, socket, id) => {
