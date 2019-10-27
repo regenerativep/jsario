@@ -1,6 +1,7 @@
 var Server = require("ws").Server;
 var wrldJs = require("./public/world.js");
 var GameWorld = wrldJs.GameWorld, GameCell = wrldJs.GameCell;
+var GameUser = require("./user.js");
 var WebServer = require("./webserver.js")();
 var EventEmitter = require("./public/eventemitter.js");
 
