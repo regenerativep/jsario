@@ -168,6 +168,7 @@ class GameCell
         let mass = new GameMass(this.world, this.x, this.y, this.targetX, this.targetY);
         mass.x += uX * (this.radius - mass.radius);
         mass.y += uY * (this.radius - mass.radius);
+        mass.launch();
         return mass;
     }
     launch()
