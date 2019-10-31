@@ -1,56 +1,13 @@
 var Server = require("ws").Server;
 var wrldJs = require("./public/world.js");
 var GameWorld = wrldJs.GameWorld, GameCell = wrldJs.GameCell;
+var GameUser = require("./user.js");
 var WebServer = require("./webserver.js")();
 var EventEmitter = require("./public/eventemitter.js");
 
 var webapp, wsServer, gameWorld;
 var gameUpdateInterval, clientUpdateInterval;
 var messageResponses = {};
-
-var userState = {
-    STARTING: 0,
-    PLAYING: 1,
-    DEAD: 2
-};
-class GameUser
-{
-    constructor(socket, id)
-    {
-        this.socket = socket;
-        this.cells = [];
-        this.id = id;
-        this.state = userState.STARTING;
-    }
-    sendCellList()
-    {
-        let cellIds = [];
-        for(let i = 0; i < this.cells.length; i++)
-        {
-            cellIds.push(this.cells[i].id);
-        }
-        this.socket.send(JSON.stringify({
-            type: "youare",
-            cellIds: cellIds
-        }));
-    }
-    sendWorldSize()
-    {
-        this.socket.send(JSON.stringify({
-            type: "worldSize",
-            size: [gameWorld.width,gameWorld.height]
-        }));
-    }
-    close()
-    {
-        for(let i = 0; i < this.cells.length; i++)
-        {
-            let cell = this.cells[i];
-            gameWorld.cellList.splice(gameWorld.cellList.indexOf(cell), 1);
-            gameWorld.removeEntity(cell);
-        }
-    }
-}
 
 var users = [];
 function readProp(val, def)
@@ -112,6 +69,23 @@ function broadcast(data)
         user.socket.send(JSON.stringify(data));
     }
 }
+function updateClients()
+{
+    let entityDataList = [];
+    let entityData = gameWorld.dequeueEntityUpdate();
+    while(entityData != null)
+    {
+        entityDataList.push(entityData);
+        entityData = gameWorld.dequeueEntityUpdate();
+    }
+    if(entityDataList.length > 0)
+    {
+        broadcast({
+            type: "updateEntities",
+            entities: entityDataList
+        });
+    }
+}
 function main()
 {
     gameWorld = new GameWorld(4096, 4096);
@@ -137,22 +111,7 @@ function main()
     gameUpdateInterval = setInterval(() => {
         gameWorld.update();
     }, 1000 / 60);
-    clientUpdateInterval = setInterval(() => {
-        let entityDataList = [];
-        let entityData = gameWorld.dequeueEntityUpdate();
-        while(entityData != null)
-        {
-            entityDataList.push(entityData);
-            entityData = gameWorld.dequeueEntityUpdate();
-        }
-        if(entityDataList.length > 0)
-        {
-            broadcast({
-                type: "updateEntities",
-                entities: entityDataList
-            });
-        }
-    }, 1000 / 60);
+    clientUpdateInterval = setInterval(updateClients, 1000 / 60);
 
     messageResponses["ping"] = (data, socket) => {
         socket.send(JSON.stringify({
@@ -165,11 +124,8 @@ function main()
         {
             return;
         }
-        let x = Math.random() * gameWorld.width;
-        let y = Math.random() * gameWorld.height;
-        let cell = new GameCell(gameWorld, x, y);
-        let user = new GameUser(socket, id);
-        user.cells = cell.group;
+        let user = new GameUser(gameWorld, socket, id);
+        user.respawn();
         //we need to catch the user up with all of the already existing entities
         let allEntityData = gameWorld.getAllEntityData();
         for(let i = 0; i < allEntityData.length; i++)
@@ -178,10 +134,8 @@ function main()
             entityData["type"] = "createEntity";
             socket.send(JSON.stringify(entityData));
         }
-        user.sendCellList();
         user.sendWorldSize();
         users.push(user);
-        user.state = userState.PLAYING;
         console.log("registered a user");
     };
     messageResponses["input"] = (data, socket, id) => {
@@ -203,35 +157,11 @@ function main()
         }
         if(doSplit)
         {
-            user.cells.sort((a, b) => { return a.mass - b.mass; }); //ascending
-            for(let i = user.cells.length - 1; i >= 0; i--)
-            {
-                if(user.cells.length >= gameWorld.maxSplitCount)
-                {
-                    break;
-                }
-                let cell = user.cells[i];
-                if(cell.mass < gameWorld.minSplitSize)
-                {
-                    continue;
-                }
-                let newCell = cell.split();
-                //user.cells.push(newCell);
-                newCell.launch();
-            }
-            user.sendCellList();
+            user.split();
         }
         if(doShoot)
         {
-            for(let i = user.cells.length - 1; i >= 0; i--)
-            {
-                let cell = user.cells[i];
-                if(cell.mass > gameWorld.minShootSize)
-                {
-                    let newMass = cell.shoot();
-                    newMass.launch();
-                }
-            }
+            user.shoot();
         }
     };
     wsServer = new Server({
@@ -258,7 +188,6 @@ function main()
             {
                 //remove user's cells from world
                 user.close();
-                
                 console.log("user id " + id + " disconnected" + ((reason != null && reason != "") ? (" (" + reason + ")") : ""));
                 users.splice(users.indexOf(user), 1);
             }

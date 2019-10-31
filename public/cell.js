@@ -38,7 +38,7 @@ class GameCell
         this.targetX = 0;
         this.targetY = 0;
         this.moveAcceleration = 0.6;
-        this.launchAcceleration = 2;
+        this.launchAcceleration = 3;
         this.angle = 0;
         this.group = [this];
         var thisCell = this;
@@ -168,6 +168,7 @@ class GameCell
         let mass = new GameMass(this.world, this.x, this.y, this.targetX, this.targetY);
         mass.x += uX * (this.radius - mass.radius);
         mass.y += uY * (this.radius - mass.radius);
+        mass.launch();
         return mass;
     }
     launch()

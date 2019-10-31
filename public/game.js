@@ -142,8 +142,8 @@ class Camera
         }
         destX = (destX/cells.length)-halfWidth/this.scale;
         destY = (destY/cells.length)-halfHeight/this.scale;
-        destX = (destX + prevX)/2;
-        destY = (destY + prevY)/2;
+        destX = (destX + prevX) / 2;
+        destY = (destY + prevY) / 2;
         if(isNaN(destX))
         {
             destX = prevX;
@@ -154,7 +154,6 @@ class Camera
         }
         this.camX = destX;
         this.camY = destY;
-        console.log(this.camX);
         scale(this.scale);
         translate(-this.camX,-this.camY);
         if(showDebug)
