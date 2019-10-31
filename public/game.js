@@ -144,8 +144,6 @@ class Camera
         destY = (destY/cells.length)-halfHeight/this.scale;
         destX = (destX + prevX)/2;
         destY = (destY + prevY)/2;
-        // this.camX = destX;
-        // this.camY = destY;
         if(isNaN(destX))
         {
             destX = prevX;
@@ -154,7 +152,6 @@ class Camera
         {
             destY = prevX;
         }
-        console.log(destX+",ds,"+destY);
         this.camX = destX;
         this.camY = destY;
         console.log(this.camX);
@@ -251,7 +248,7 @@ class Client
     {
         this.localIds = [];
         this.entityList = {};
-        this.foodTree = new Quadtree(0, 0, 2048, 2048); //todo: possibly let server tell us room size
+        this.foodTree = new Quadtree(0, 0, 2048, 2048);
         this.webSock = null;
         this.camera = camera;
     }
@@ -451,7 +448,6 @@ function hexTile(camera)
 {
     let x = camera.camX - camera.camX % (wid2) - wid4;
     let y = camera.camY - camera.camY % (len3) - len15;
-    //let offset = ((camera.camX - camera.camX % (wid))/(wid)) % 2 == 0 ? false:true;
     let offset = false;
     stroke(50,50,50);
     strokeWeight(2);
