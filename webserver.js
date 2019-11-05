@@ -12,6 +12,7 @@ module.exports = function() {
     webapp.get("/index.html", (req, res) => {
         res.redirect("/game.html");
     });
-    webapp.listen(82, function() { console.log("webserver running (port 82) (ex. http://127.0.0.1:82 )"); })
+    var port = 8080;
+    webapp.listen(port, function() { console.log("webserver running (port 82) (ex. http://127.0.0.1:" + port + " )"); })
     return webapp;
 };
